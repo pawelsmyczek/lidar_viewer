@@ -1,0 +1,12 @@
+.cproject
+.idea/
+.mxproject
+.project
+*.xml
+*.ioc
+*.cfg
+*.svd
+*.pdf
+cmake-build*/
+build*/
+*.log
