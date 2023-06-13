@@ -205,6 +205,8 @@ void CygLidarD1::stop()
     {
         rxFuture.wait();
     }
+
+    serial.close();
 }
 
 }

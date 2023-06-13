@@ -39,26 +39,6 @@ bool pollFor(int fd, const std::chrono::milliseconds ms, const int16_t pollType)
     return true ;
 }
 
-lidar_viewer::dev::SerialPort* serial = nullptr;
-
-void handleSigTerm(int signo)
-{
-    if (signo == SIGTERM)
-    {
-        serial->close();
-        exit(SIGTERM);
-    }
-}
-
-void handleSigInt(int signo)
-{
-    if (signo == SIGINT)
-    {
-        serial->close();
-        exit(SIGINT);
-    }
-}
-
 }
 
 namespace lidar_viewer::dev
@@ -71,14 +51,6 @@ SerialPort::SerialPort(const std::string& fileName)
     {
         throw std::runtime_error("failed to open stream: " + std::to_string(fd));
     }
-
-    if(!serial)
-    {
-        serial = this;
-    }
-
-    ::signal(SIGTERM, handleSigTerm);
-    ::signal(SIGINT, handleSigInt);
 }
 
 SerialPort::~SerialPort()

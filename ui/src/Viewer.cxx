@@ -1,4 +1,4 @@
-#include "../inc/Viewer.h"
+#include "Viewer.h"
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -16,7 +16,6 @@ void disp()
     }
     viewerPtr->display();
 }
-
 
 void reshape(int w, int h)
 {
@@ -86,7 +85,7 @@ Viewer::Viewer(Config configuration_,
     }
     glutInit(argc, argv);
     glutInitDisplayMode(GLUT_RGBA |GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(configuration_.w, configuration_.h);
+    glutInitWindowSize(configuration.w, configuration.h);
     glutCreateWindow("LidarViewer");
 }
 
@@ -94,7 +93,7 @@ void Viewer::start() const
 {
     glutDisplayFunc( disp );
     glutReshapeFunc( reshape );
-    glutSpecialFunc(special);
+    glutSpecialFunc( special );
     glutKeyboardFunc( keyboard );
     glutMainLoop();
 }
@@ -116,9 +115,9 @@ void Viewer::display()
     glRotatef( roty, 0, 1.0, 0 );
 
     {
-        std::lock_guard lGuard(mutex);
         for( auto& func: viewerFuncitons )
         {
+            std::lock_guard lGuard(mutex);
             glPushMatrix();
             func.function(func.worker);
             glPopMatrix();
