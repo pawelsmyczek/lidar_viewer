@@ -12,7 +12,7 @@ using MapGlUByte3 = std::array<GLubyte, 3>;
 namespace
 {
 
-MapGlUByte3 valueRangeToRGBByte(const unsigned int minv, const unsigned int maxv, const unsigned int value ) noexcept
+MapGlUByte3 valueRangeToRGBByte(unsigned int minv, unsigned int maxv, unsigned int value ) noexcept
 {
     const auto ratio = static_cast<float>(value-minv) / static_cast<float>(maxv - minv);
     auto a = (1.f - ratio) / .25f;
@@ -23,11 +23,11 @@ MapGlUByte3 valueRangeToRGBByte(const unsigned int minv, const unsigned int maxv
     {
         case 0: return { 255u,                          y,                              0u};
         case 1: return { static_cast<GLubyte>(255u-y),  255u,                           0u};
-        case 2: return { 0u,                            255,                            y};
+        case 2: return { 0u,                            255u,                            y};
         case 3: return { 0u,                            static_cast<GLubyte>(255u-y),   255u};
         case 4: return { 0u,                            0u,                             255u};
     }
-    return { 0, 0, 0 };
+    return { 0u, 0u, 0u };
 }
 
 template<typename tVal>
@@ -37,11 +37,7 @@ tVal mapValue(std::pair<tVal,tVal> a, std::pair<tVal, tVal> b, tVal inVal) noexc
     tVal aUpperNorm = a.second - a.first;
     tVal normPosition = inValNorm / aUpperNorm;
 
-    tVal bUpperNorm = b.second - b.first;
-    tVal bValNorm = normPosition * bUpperNorm;
-    tVal outVal = b.first + bValNorm;
-
-    return outVal;
+    return b.first + (normPosition * ( b.second - b.first ) );
 }
 
 }
@@ -62,11 +58,11 @@ void lidar3D_Display(const dev::CygLidarD1* lidar)
     constexpr auto minimumDistanceMm                            = 51u;
     constexpr auto maximumDistanceMm                            = 2000u;
 
-    constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeX    = {-1.f, 1.f};
-    constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeY    = {1.f, -1.f};
-    constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeZ    = {1.f, .0f};
-    constexpr std::pair<GLfloat, GLfloat> glRangeX              = {0.f, static_cast<GLfloat>(frameResolution.first)};
-    constexpr std::pair<GLfloat, GLfloat> glRangeY              = {0.f, static_cast<GLfloat>(frameResolution.second)};
+    constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeX    {-1.f, 1.f};
+    constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeY    {1.f, -1.f};
+    constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeZ    {1.f, .0f};
+    constexpr std::pair<GLfloat, GLfloat> glRangeX              {0.f, static_cast<GLfloat>(frameResolution.first)};
+    constexpr std::pair<GLfloat, GLfloat> glRangeY              {0.f, static_cast<GLfloat>(frameResolution.second)};
     constexpr std::pair<GLfloat, GLfloat> glRangeZ              {static_cast<GLfloat>(minimumDistanceMm),
                                                                  static_cast<GLfloat>(maximumDistanceMm)};
 
