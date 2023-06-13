@@ -68,14 +68,14 @@ void SerialPort::configure(const unsigned int baudRate) const
     {
         setCustomBaudrate(fd, baudRate);
     }
+    else
+    {
+        if (const auto ret = ::ioctl (fd, TCGETS, &ttyold);
+                ret < 0 )
+        {
+            throw std::runtime_error (__func__ + "::ioctl returned : "s + std::to_string(ret) );
+        }
 
-    if (const auto ret = ::ioctl (fd, TCGETS, &ttyold);
-                    ret < 0 )
-    {
-        throw std::runtime_error (__func__ + "::ioctl returned : "s + std::to_string(ret) );
-    }
-    if(standardBaud)
-    {
         if(const auto ospeedret = ::cfsetospeed (&ttynew, baudRate);
                 ospeedret < 0)
         {
