@@ -79,8 +79,8 @@ void lidar3D_Display(const dev::CygLidarD1* lidar)
             const auto frameId = y*frameResolution.first + x;
             if( pointCloud[frameId] == 4082u )
             {
-                const MapGlUByte3 rgbValues { 66u, 135u, 245u };
-                glColor3ubv( &rgbValues[0] );
+                const MapGlUByte3 rgbValuesForBrokenPoint { 66u, 135u, 245u };
+                glColor3ubv( &rgbValuesForBrokenPoint[0] );
                 positionMap =
                         {
                                 mapValue<GLfloat>(glRangeX, glFullScreenRangeX, static_cast<GLfloat>(x)),
