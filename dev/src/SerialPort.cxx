@@ -1,6 +1,7 @@
 #include "SerialPort.h"
 #include "CustomBaudrateSetter.h"
 
+#include <unistd.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <poll.h>

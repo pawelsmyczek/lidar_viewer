@@ -11,3 +11,5 @@ cmake-build*/
 build*/
 *.log
 coverage.info
+compile_commands.json
+.cache/

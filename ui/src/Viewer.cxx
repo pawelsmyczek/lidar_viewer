@@ -85,7 +85,8 @@ Viewer::Viewer(Config configuration_,
     }
     glutInit(argc, argv);
     glutInitDisplayMode(GLUT_RGBA |GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(configuration.w, configuration.h);
+    glutInitWindowSize(static_cast<int>(configuration.w),
+                       static_cast<int>(configuration.h));
     glutCreateWindow("LidarViewer");
 }
 
@@ -111,8 +112,8 @@ void Viewer::display()
 
     glScalef( windowScale, windowScale, windowScale );
 
-    glRotatef( rotx, 1.0, 0, 0 );
-    glRotatef( roty, 0, 1.0, 0 );
+    glRotatef( rotx, 1.f, 0.f, 0.f);
+    glRotatef( roty, 0.f, 1.0, 0.f );
 
     {
         for( auto& func: viewerFuncitons )

@@ -9,90 +9,101 @@
 #include <mutex>
 #include <thread>
 
-namespace lidar_viewer::dev {
+namespace lidar_viewer::dev
+{
 
-class CygLidarD1 {
-  CygLidarD1(const CygLidarD1 &) = delete;
-  CygLidarD1 &operator=(const CygLidarD1 &) = delete;
-
+class CygLidarD1
+{
+    CygLidarD1(const CygLidarD1&) = delete;
+    CygLidarD1& operator = (const CygLidarD1&) = delete;
 public:
-  enum class Mode { Mode2D = 0x01u, Mode3D = 0x08u, Dual = 0x07u };
-
-  enum class BaudRate {
-    B57k6 = 0x39u,
-    B115k2 = 0xaau,
-    B250k = 0x77u,
-    B3M = 0x55u
-  };
-
-  using FrequencyChannel = uint8_t;
-
-  class PulseDuration {
-  public:
-    enum class PulseMode : uint16_t {
-      Auto3D = 0u << 14u,
-      Fixed3D = 1u << 14u,
-      AutoDual,
-      FixedDual
+    enum class Mode
+    {
+        Mode2D = 0x01u,
+        Mode3D = 0x08u,
+        Dual = 0x07u
     };
 
-    PulseDuration(PulseMode pulseMode, uint16_t duration_);
+    enum class BaudRate
+    {
+        B57k6 = 0x39u,
+        B115k2 = 0xaau,
+        B250k = 0x77u,
+        B3M = 0x55u
+    };
 
-    uint16_t get() const;
+    using FrequencyChannel = uint8_t;
 
-  private:
-    uint16_t duration;
-  };
+    class PulseDuration
+    {
+    public:
+        enum class PulseMode : uint16_t
+        {
+            Auto3D = 0u << 14u,
+            Fixed3D = 1u << 14u,
+            AutoDual,
+            FixedDual
+        };
 
-  struct Config {
-    BaudRate baudRate;
-    FrequencyChannel frequencyCh;
-    PulseDuration pulseDuration;
-    uint8_t sensitivity;
-  };
+        PulseDuration(PulseMode pulseMode, uint16_t duration_);
 
-  /// ctor, opens commnunication with lidar
-  /// @param deviceName unix file name
-  explicit CygLidarD1(const std::string &deviceName);
+        uint16_t get() const;
 
-  /// dtor, disables communication with lidar
-  ~CygLidarD1();
+    private:
+        uint16_t duration;
+    };
 
-  /// configures io with baudrate
-  void ioconfigure(const BaudRate baudRate) const;
+    struct Config
+    {
+        BaudRate baudRate;
+        FrequencyChannel frequencyCh;
+        PulseDuration pulseDuration;
+        uint8_t sensitivity;
+    };
 
-  ///  checks if the device is connected
-  bool connected();
+    /// ctor, opens commnunication with lidar
+    /// @param deviceName unix file name
+    explicit CygLidarD1(const std::string& deviceName);
 
-  /// configures device according to definition of struct Config
-  void configure(const Config cfg);
+    /// dtor, disables communication with lidar
+    ~CygLidarD1();
 
-  /// run a measurements receival according to mode
-  /// @param mode, take a look into Mode definition
-  void run(Mode mode = Mode::Mode2D);
+    /// configures io with baudrate
+    void ioconfigure(const BaudRate baudRate) const;
 
-  /// start measurement receival thread
-  void start(Mode mode = Mode::Mode2D);
+    ///  checks if the device is connected
+    bool connected();
 
-  /// stop measurement receival thread
-  void stop();
+    /// configures device according to definition of struct Config
+    void configure(const Config cfg);
 
-  const std::array<uint16_t, 9600u /*160x60*/> *get3dFrame() const;
+    /// run a measurements receival according to mode
+    /// @param mode, take a look into Mode definition
+    void run(Mode mode = Mode::Mode2D);
 
-  static constexpr std::pair<unsigned int, unsigned int>
-  getFrameWindow() noexcept(true) {
-    return {160u, 60u};
-  }
+    /// start measurement receival thread
+    void start(Mode mode = Mode::Mode2D);
+
+    /// stop measurement receival thread
+    void stop();
+
+    const std::array<uint16_t , 9600u/*160x60*/>* get3dFrame() const;
+
+    static constexpr std::pair<unsigned int, unsigned int> getFrameWindow() noexcept(true)
+    {
+        return { 160u, 60u };
+    }
 
 private:
-  void read3dFrame();
 
-  SerialPort serial;
+    void read3dFrame();
 
-  std::array<uint16_t, 9600u /*160x60*/> pointcloud3d;
-  std::atomic<bool> stopThread;
-  std::future<void> rxFuture;
-  mutable std::mutex rwMutex;
+    SerialPort serial;
+
+    std::array<uint16_t , 9600u/*160x60*/> pointcloud3d;
+    std::atomic<bool> stopThread;
+    std::future<void> rxFuture;
+    mutable std::mutex rwMutex;
 };
 
 } // namespace lidar_viewer::dev
