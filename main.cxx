@@ -3,6 +3,7 @@
 #include "DisplayFunctions.h"
 
 #include <iostream>
+#include <mutex>
 
 int main(int argc, char** argv)
 {
@@ -29,21 +30,30 @@ int main(int argc, char** argv)
             };
 
     std::cout << "Opening device\n";
-    CygLidarD1 lidar{"/dev/ttyUSB0"s};
-    lidar.ioconfigure(ioBaudRate);
-    if(lidar.connected())
+
+    try
     {
-        std::cerr << "Lidar not connected!";
-        return -1;
+        CygLidarD1 lidar{"/dev/ttyUSB0"s};
+        lidar.ioconfigure(ioBaudRate);
+        if(lidar.connected())
+        {
+            std::cerr << "Lidar not connected!";
+            return -1;
+        }
+        lidar.configure(lidarCfg);
+        lidar.start(Mode::Mode3D);
+
+        std::cout << "Opening viewer\n";
+
+        Viewer viewer(viewerCfg, &argc, argv);
+        viewer.registerViewerFunction(lidar3D_Display, &lidar);
+        viewer.start();
+
     }
-    lidar.configure(lidarCfg);
-    lidar.start(Mode::Mode3D);
-
-    std::cout << "Opening viewer\n";
-
-    Viewer viewer(viewerCfg, &argc, argv);
-    viewer.registerViewerFunction(lidar3D_Display, &lidar);
-    viewer.start();
+    catch ( std::exception& exc )
+    {
+        std::cerr << "Exception thrown during viewer runtime: " << exc.what() << "\n";
+    }
 
     return 0;
 }

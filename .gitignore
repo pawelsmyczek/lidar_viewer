@@ -10,3 +10,5 @@
 cmake-build*/
 build*/
 *.log
+compile_commands.json
+.cache/

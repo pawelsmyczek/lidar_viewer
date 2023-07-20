@@ -3,6 +3,8 @@
 #include <asm/termbits.h>
 #include <sys/ioctl.h>
 
+#include <stdexcept>
+
 namespace lidar_viewer::dev
 {
 

@@ -31,7 +31,7 @@ void handleSigTerm(int signo)
     if (signo == SIGTERM)
     {
         cygLidarD1Ptr->stop();
-        exit(SIGTERM);
+        ::exit(SIGTERM);
     }
 }
 
@@ -40,7 +40,7 @@ void handleSigInt(int signo)
     if (signo == SIGINT)
     {
         cygLidarD1Ptr->stop();
-        exit(SIGINT);
+        ::exit(SIGINT);
     }
 }
 
@@ -84,12 +84,12 @@ bool CygLidarD1::connected()
 {
     using Req = Frame<2u>;
     using Resp = Frame<7u>;
-    Req({RequestTypes::DeviceInfo, 0x00u}).write(serial);
+    write(Req({RequestTypes::DeviceInfo, 0x00u}), serial);
 
-    auto ret = Resp{}.read(serial);
+    auto ret = read<Resp>(serial);
     auto& retPayload = *ret.payload();
-
-    return Resp::Payload {RequestTypes::DeviceInfo, 0x00u, 0x03u, 0x05u, 0x00u, 0x02, 0x02} == retPayload;
+    static constexpr Resp::Payload expectedPayload{RequestTypes::DeviceInfo, 0x00u, 0x03u, 0x05u, 0x00u, 0x02, 0x02};
+    return expectedPayload == retPayload;
 }
 
 void CygLidarD1::ioconfigure(const BaudRate baudRate) const
@@ -103,24 +103,18 @@ void CygLidarD1::ioconfigure(const BaudRate baudRate) const
 
 void CygLidarD1::configure(const Config cfg)
 {
-    using namespace std::chrono_literals;
-    using Frame2 = Frame<2u>;
-    using Frame3 = Frame<3u>;
+    write( Frame<2u>({RequestTypes::BaudRate, static_cast<uint8_t>(cfg.baudRate)} ), serial );
 
-    Frame2({RequestTypes::BaudRate, static_cast<uint8_t>(cfg.baudRate)} ).write( serial );
     const auto pulseDuration = cfg.pulseDuration.get();
-    Frame3({RequestTypes::SetLightPulseDuration, static_cast<uint8_t>(pulseDuration & 0xffu),
-            static_cast<uint8_t>((pulseDuration & 0xff00u) >> 8u)} ).write( serial );
-
-    Frame2({RequestTypes::SetFreqChannel, static_cast<uint8_t>(cfg.frequencyCh)} ).write( serial );
-
-    Frame2({RequestTypes::SetSensitivity, static_cast<uint8_t>(cfg.sensitivity)} ).write( serial );
-
+    write( Frame<3u>({RequestTypes::SetLightPulseDuration, static_cast<uint8_t>(pulseDuration & 0xffu),
+            static_cast<uint8_t>((pulseDuration & 0xff00u) >> 8u)} ), serial );
+    write( Frame<2u>({RequestTypes::SetFreqChannel, static_cast<uint8_t>(cfg.frequencyCh)} ), serial );
+    write( Frame<2u>({RequestTypes::SetSensitivity, static_cast<uint8_t>(cfg.sensitivity)} ), serial );
 }
 
 void CygLidarD1::run(Mode mode)
 {
-    Frame<2u>( {static_cast<uint8_t>(mode), 0x00u} ).write(serial);
+    write(Frame<2u>( {static_cast<uint8_t>(mode), 0x00u} ), serial);
 }
 
 void CygLidarD1::start(Mode mode)
@@ -160,7 +154,7 @@ void CygLidarD1::read3dFrame()
 {
     using namespace std::chrono_literals;
 
-    const auto ret = Frame<14401u>{}.read(serial);
+    auto ret = read< Frame<14401u> >(serial);
     if(ret.status() == decltype(ret)::Status::BAD)
     {
         return ;
@@ -199,7 +193,7 @@ void CygLidarD1::stop()
     {
         return ;
     }
-    Frame<2u>( {0x02, 0x00u} ).write(serial);
+    write(Frame<2u>( {0x02, 0x00u} ),serial);
     stopThread = true;
     if (rxFuture.valid())
     {
@@ -210,3 +204,4 @@ void CygLidarD1::stop()
 }
 
 }
+

@@ -89,7 +89,7 @@ public:
 
     const std::array<uint16_t , 9600u/*160x60*/>* get3dFrame() const;
 
-    static constexpr std::pair<unsigned int, unsigned int> getFrameWindow() noexcept(true)
+    static constexpr std::pair<unsigned int, unsigned int> getFrameWindow() noexcept
     {
         return { 160u, 60u };
     }

@@ -39,12 +39,6 @@ public:
     Frame() : data{}, status_{Status::OK}
     {}
 
-    /// @brief write frame to a serial port
-    void write(SerialPort& sp);
-
-    /// @brief read frame from a serial port
-    auto read(SerialPort& serial);
-
     /// @returns pointer to the first element of the payload
     const Payload* payload() const noexcept
     { return &data.repr.payload_; }
@@ -62,15 +56,14 @@ public:
     { return status_; }
 
     [[nodiscard]] const uint8_t* raw() const noexcept
-    {
-        return &data.raw[0];
-    }
+    { return &data.raw[0]; }
+
+    [[nodiscard]] static auto size() noexcept
+    { return s; }
 
     /// performs integrity check via checksum calculation
     [[nodiscard]] bool validateChecksum(const uint8_t inchecksum) const
-    {
-        return data.repr.checksum_ == inchecksum;
-    }
+    { return data.repr.checksum_ == inchecksum; }
 
     [[nodiscard]] uint8_t checksum() const
     {
@@ -81,12 +74,6 @@ public:
         }
         return checkSum;
     }
-
-    Frame(const Frame&) = default;
-    Frame& operator = (const Frame&) = default;
-    Frame(Frame&&)  noexcept = default;
-    Frame& operator = (Frame&&)  noexcept = default;
-    ~Frame() = default;
 
 private:
     union Data
@@ -103,43 +90,50 @@ private:
     Status status_;
 };
 
-template < uint16_t s >
-auto Frame<s>::read(SerialPort& serial)
+/// @brief read frame from a serial port
+/// @parameter serial reference to serial port
+template < class RespFrame >
+RespFrame read(SerialPort& serial)
 {
     using namespace std::chrono_literals;
-    using RespFrame = Frame<s>;
-
-    const auto expectedFrameHeader = header();
-    auto rawResponse = const_cast<uint8_t*>(raw());
+    RespFrame respFrame;
+    const auto expectedFrameHeader = respFrame.header();
+    auto rawResponse = const_cast<uint8_t*>(respFrame.raw());
     typename std::remove_const<decltype(expectedFrameHeader)>::type retHeader{};
 
     if (serial.read(&retHeader[0], expectedFrameHeader.size(), 2ms);
             retHeader != expectedFrameHeader)
     {
-        return RespFrame {Status::BAD};
+        return RespFrame {RespFrame::Status::BAD};
     }
 
-    auto readBytesInc = header().size();
+    auto readBytesInc = respFrame.header().size();
     rawResponse += readBytesInc;
-    decltype(s) returnedSize{};
+    decltype(RespFrame::size()) returnedSize{};
 
-    if(readBytesInc = serial.read(reinterpret_cast<uint8_t *>(&returnedSize), sizeof(returnedSize), 1ms);
-            readBytesInc != sizeof(returnedSize) || returnedSize != s)
+    if(readBytesInc = serial.read(reinterpret_cast<uint8_t *>(&returnedSize),
+                                                        sizeof(returnedSize), 1ms);
+            readBytesInc != sizeof(returnedSize) || returnedSize != RespFrame::size())
     {
-        std::cerr << __func__ << ": " << readBytesInc << " != " << sizeof(returnedSize) << " || "<< returnedSize <<" >= " << s <<"\n";
-        return RespFrame {Status::BAD};
+        std::cerr << __func__ << ": " << readBytesInc
+                    << " != " << sizeof(returnedSize) << " || "
+                        << returnedSize <<" >= " << RespFrame::size() <<"\n";
+        return RespFrame {RespFrame::Status::BAD};
     }
 
     rawResponse += readBytesInc;
     serial.read(rawResponse, returnedSize - readBytesInc, 6ms);
-    return *this;
+    return respFrame;
 }
 
+
+/// @brief write frame to a serial port
+/// @parameter writeFrame frame to write
+/// @parameter serial reference to serial port
 template < uint16_t s >
-void Frame<s>::write(SerialPort& sp)
+void write(Frame<s> writeFrame, SerialPort& serial)
 {
-    using ReqFrame = Frame<s>;
-    sp.write(raw(), sizeof(ReqFrame)-sizeof(typename ReqFrame::Status));
+    serial.write(writeFrame.raw(), sizeof(Frame<s>)-sizeof(typename Frame<s>::Status));
 }
 
 
