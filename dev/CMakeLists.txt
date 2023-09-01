@@ -2,7 +2,7 @@ set(NAME dev)
 
 add_library(${NAME} STATIC)
 
-target_sources(${NAME} PUBLIC
+target_sources(${NAME} PRIVATE
         src/SerialPort.cxx
         src/CygLidarD1.cxx
         src/CustomBaudrateSetter.cxx)

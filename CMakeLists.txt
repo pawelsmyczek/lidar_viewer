@@ -13,12 +13,23 @@ endif()
 
 project(lidar_viewer)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_compile_options(-Wall -Wextra -Wpedantic)
+
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+    add_compile_options(-O2)
+elseif(CMAKE_BUILD_TYPE STREQUAL Debug)
+    add_compile_options(-O0 -g)
+endif()
+
 add_subdirectory(dev)
 add_subdirectory(ui)
+
 
 if(BUILD_FOR_UNIT_TESTS)
     add_subdirectory(tests)
 endif()
 
 add_executable(lidar_viewer main.cxx)
-target_link_libraries(lidar_viewer dev ui)
+target_link_libraries(lidar_viewer ui dev pthread)

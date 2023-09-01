@@ -1,9 +1,5 @@
-#include "CygLidarD1.h"
-#include "CygLidarFrame.h"
-#include "StatusOr.h"
-
-#include <csignal>
-#include <termios.h>
+#include "lidar_viewer/dev/CygLidarD1.h"
+#include "lidar_viewer/dev/CygLidarFrame.h"
 
 #include <chrono>
 #include <iostream>
@@ -25,26 +21,6 @@ enum RequestTypes
     BaudRate = 0x12u
 };
 
-lidar_viewer::dev::CygLidarD1* cygLidarD1Ptr = nullptr;
-
-void handleSigTerm(int signo)
-{
-    if (signo == SIGTERM)
-    {
-        cygLidarD1Ptr->stop();
-        ::exit(SIGTERM);
-    }
-}
-
-void handleSigInt(int signo)
-{
-    if (signo == SIGINT)
-    {
-        cygLidarD1Ptr->stop();
-        ::exit(SIGINT);
-    }
-}
-
 }
 
 namespace lidar_viewer::dev
@@ -57,26 +33,22 @@ CygLidarD1::PulseDuration::PulseDuration(
     duration |= static_cast<uint16_t>(pulseMode);
 }
 
+CygLidarD1::PulseDuration::PulseDuration()
+: duration{static_cast<uint16_t>(PulseMode::AutoDual)}
+{ }
+
 uint16_t CygLidarD1::PulseDuration::get() const
 {
     return duration;
 }
 
-CygLidarD1::CygLidarD1(const std::string&  deviceName)
-: serial{deviceName}
+CygLidarD1::CygLidarD1(SerialPort& _serial)
+: serial{_serial}
 , pointcloud3d{}
 , stopThread{false}
-{
-    if(!cygLidarD1Ptr)
-    {
-        cygLidarD1Ptr = this;
-    }
+{ }
 
-    ::signal(SIGTERM, handleSigTerm);
-    ::signal(SIGINT, handleSigInt);
-}
-
-CygLidarD1::~CygLidarD1()
+CygLidarD1::~CygLidarD1() noexcept
 {
     stop();
 }
@@ -97,15 +69,6 @@ bool CygLidarD1::connected()
     return false;
 }
 
-void CygLidarD1::ioconfigure(const BaudRate baudRate) const
-{
-    const auto speedForSerial = baudRate == BaudRate::B57k6 ? B57600:
-                       baudRate == BaudRate::B115k2 ? B115200:
-                       baudRate == BaudRate::B250k ? 250000:
-                       B3000000 ;
-    serial.configure(speedForSerial);
-}
-
 void CygLidarD1::configure(const Config cfg)
 {
     write( Frame<2u>({RequestTypes::BaudRate, static_cast<uint8_t>(cfg.baudRate)} ), serial );
@@ -114,7 +77,7 @@ void CygLidarD1::configure(const Config cfg)
     write( Frame<3u>({RequestTypes::SetLightPulseDuration, static_cast<uint8_t>(pulseDuration & 0xffu),
             static_cast<uint8_t>((pulseDuration & 0xff00u) >> 8u)} ), serial );
     write( Frame<2u>({RequestTypes::SetFreqChannel, static_cast<uint8_t>(cfg.frequencyCh)} ), serial );
-    write( Frame<2u>({RequestTypes::SetSensitivity, static_cast<uint8_t>(cfg.sensitivity)} ), serial );
+    write( Frame<2u>({RequestTypes::SetSensitivity, static_cast<uint8_t>(cfg.sensitivity)} ),     serial );
 }
 
 void CygLidarD1::run(Mode mode)
@@ -130,7 +93,7 @@ void CygLidarD1::start(Mode mode)
     {
         try
         {
-            for( ; !stopThread ; )
+            for( ; !stopThread.load() ; )
             {
                 read3dFrame();
 #if 0
@@ -151,6 +114,7 @@ void CygLidarD1::start(Mode mode)
         {
             stop();
             std::cerr << "Failure in lidar operation: " << e.what() << "\n";
+            throw ;
         }
     });
 }
@@ -162,7 +126,7 @@ void CygLidarD1::read3dFrame()
     const auto ret = read< Frame<14401u> >(serial);
     if (!ret.ok())
     {
-        return;
+        return ;
     }
     const auto returnedPayload = ret.payload();
     {
@@ -183,10 +147,10 @@ void CygLidarD1::read3dFrame()
             *frame3dIt |= (thirdEl << 4u);
         }
     }
-    std::this_thread::sleep_for(67ms); // 15Hz timeout
+    std::this_thread::sleep_for(1us);
 }
 
-const std::array<uint16_t, 9600u/*160x60*/> *CygLidarD1::get3dFrame() const
+const std::array<uint16_t, 9600u/*160x60*/>* CygLidarD1::get3dFrame() const
 {
     std::lock_guard lGuard{rwMutex};
     return &pointcloud3d;
@@ -194,18 +158,18 @@ const std::array<uint16_t, 9600u/*160x60*/> *CygLidarD1::get3dFrame() const
 
 void CygLidarD1::stop()
 {
-    if ( stopThread )
+    if ( stopThread.load() )
     {
         return ;
     }
     write(Frame<2u>( {0x02, 0x00u} ),serial);
-    stopThread = true;
+    stopThread.store(true);
     if (rxFuture.valid())
     {
         rxFuture.wait();
     }
 
-    serial.close();
+    // serial.close();
 }
 
 } // namespace lidar_viewer::dev

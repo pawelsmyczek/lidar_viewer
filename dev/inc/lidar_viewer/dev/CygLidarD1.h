@@ -1,8 +1,9 @@
 #ifndef LIDAR_VIEWER_CYGLIDARD1_H
 #define LIDAR_VIEWER_CYGLIDARD1_H
 
-#include "SerialPort.h"
+#include "lidar_viewer/dev/SerialPort.h"
 
+#include <atomic>
 #include <array>
 #include <cstdint>
 #include <future>
@@ -14,22 +15,36 @@ namespace lidar_viewer::dev
 
 class CygLidarD1
 {
-    CygLidarD1(const CygLidarD1&) = delete;
-    CygLidarD1& operator = (const CygLidarD1&) = delete;
 public:
+
+    enum class ErrorCodes3D: uint16_t
+    {
+        LowAmplitude    = 4081u,
+        AdcOverflow     = 4082u,
+        Saturation      = 4083u
+    };
+
+    enum class ErrorCodes2D: uint16_t
+    {
+        LowAmplitude    = 16001u,
+        AdcOverflow     = 16002u,
+        Saturation      = 16003u,
+        BadPixel        = 16004u
+    };
+
     enum class Mode
     {
-        Mode2D = 0x01u,
-        Mode3D = 0x08u,
-        Dual = 0x07u
+        Mode2D  = 0x01u,
+        Mode3D  = 0x08u,
+        Dual    = 0x07u
     };
 
     enum class BaudRate
     {
-        B57k6 = 0x39u,
-        B115k2 = 0xaau,
-        B250k = 0x77u,
-        B3M = 0x55u
+        B57k6   = 0x39u,
+        B115k2  = 0xaau,
+        B250k   = 0x77u,
+        B3M     = 0x55u
     };
 
     using FrequencyChannel = uint8_t;
@@ -39,16 +54,19 @@ public:
     public:
         enum class PulseMode : uint16_t
         {
-            Auto3D = 0u << 14u,
+            Auto3D  = 0u << 14u,
             Fixed3D = 1u << 14u,
             AutoDual,
             FixedDual
         };
 
         PulseDuration(PulseMode pulseMode, uint16_t duration_);
+        PulseDuration();
 
-        uint16_t get() const;
+        [[nodiscard]] uint16_t get() const;
 
+        PulseDuration(const PulseDuration&) = default;
+        PulseDuration& operator = (const PulseDuration& ) = default;
     private:
         uint16_t duration;
     };
@@ -63,10 +81,7 @@ public:
 
     /// ctor, opens commnunication with lidar
     /// @param deviceName unix file name
-    explicit CygLidarD1(const std::string& deviceName);
-
-    /// dtor, disables communication with lidar
-    ~CygLidarD1();
+    explicit CygLidarD1(SerialPort& _serial);
 
     /// configures io with baudrate
     void ioconfigure(const BaudRate baudRate) const;
@@ -93,6 +108,12 @@ public:
     {
         return { 160u, 60u };
     }
+
+    CygLidarD1(const CygLidarD1&) = delete;
+    CygLidarD1& operator = (const CygLidarD1&) = delete;
+
+    /// dtor, disables communication with lidar
+    ~CygLidarD1() noexcept;
 
 private:
 

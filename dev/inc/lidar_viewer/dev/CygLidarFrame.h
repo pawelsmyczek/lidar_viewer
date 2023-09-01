@@ -64,7 +64,7 @@ public:
     [[nodiscard]] uint8_t checksum() const
     {
         auto checkSum = 0u;
-        for ( auto i = 3; i <= data.raw.size()-3; ++i )
+        for ( auto i = 3u; i <= data.raw.size()-3u; ++i )
         {
             checkSum ^= data.raw[i];
         }
@@ -103,7 +103,7 @@ RespFrame read(SerialPort& serial)
     auto rawResponse = const_cast<uint8_t*>(respFrame.raw());
     typename std::remove_const<decltype(expectedFrameHeader)>::type retHeader{};
 
-    if (serial.read(&retHeader[0], expectedFrameHeader.size(), 2ms);
+    if (serial.read(&retHeader[0], expectedFrameHeader.size(), 60ms);
             retHeader != expectedFrameHeader)
     {
         return StatusOr::MakeStatusOrError<RespFrame>(
