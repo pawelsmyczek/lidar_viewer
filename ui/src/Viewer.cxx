@@ -1,7 +1,8 @@
-#include "Viewer.h"
+#include "lidar_viewer/ui/Viewer.h"
 
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <GL/freeglut.h>
 
 namespace
 {
@@ -26,7 +27,7 @@ void reshape(int w, int h)
 
     // preojection unit matrix
     glLoadIdentity();
-    disp();
+    // disp();
 }
 
 void keyboard(unsigned char key, int , int)
@@ -39,7 +40,7 @@ void keyboard(unsigned char key, int , int)
         case '-':
             viewerPtr->scaleDown();
             break;
-        case 'q':
+        case 'b':
             viewerPtr->zeroWindowTransforms();
             break;
         default:
@@ -77,17 +78,18 @@ namespace lidar_viewer::ui
 
 Viewer::Viewer(Config configuration_,
                int* argc, char** argv) noexcept
-    : configuration{configuration_}, rotx{}, roty{}, windowScale{1.f}
+    : configuration{configuration_}, rotx{}, roty{}, windowScale{1.f}, windowId{}, stopped{false}
 {
     if(!viewerPtr)
     {
         viewerPtr = this;
     }
     glutInit(argc, argv);
-    glutInitDisplayMode(GLUT_RGBA |GLUT_DOUBLE | GLUT_DEPTH);
+    glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION); // continue execution ofter window close to cleanup properly
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(static_cast<int>(configuration.w),
                        static_cast<int>(configuration.h));
-    glutCreateWindow("LidarViewer");
+    windowId = glutCreateWindow("LidarViewer");
 }
 
 void Viewer::start() const
@@ -99,9 +101,17 @@ void Viewer::start() const
     glutMainLoop();
 }
 
+void Viewer::stop()
+{
+    std::lock_guard lGuard {mutex};
+    stopped = true;
+    glutDestroyWindow(windowId);
+}
+
 void Viewer::display()
 {
-    glClearColor( 0.0, 0.0, 0.0, 0.0 );
+
+    glClearColor( 0.f, 0.f, 0.f, 0.f );
     glClear( GL_COLOR_BUFFER_BIT );
 
     // choose modelling matrix
@@ -112,23 +122,27 @@ void Viewer::display()
 
     glScalef( windowScale, windowScale, windowScale );
 
-    glRotatef( rotx, 1.f, 0.f, 0.f);
-    glRotatef( roty, 0.f, 1.0, 0.f );
+    glRotatef(static_cast<float>(rotx), 1.f, 0.f, 0.f);
+    glRotatef(static_cast<float>(roty), 0.f, 1.0, 0.f );
 
+    for( auto& func: viewerFuncitons )
     {
-        for( auto& func: viewerFuncitons )
+        if(!func.worker || !func.function)
         {
-            std::lock_guard lGuard(mutex);
-            glPushMatrix();
-            func.function(func.worker);
-            glPopMatrix();
+            continue;
         }
-
+        glPushMatrix();
+        func.function(func.worker);
+        glPopMatrix();
     }
     glFlush();
-    glutSwapBuffers();
-
-    glutPostRedisplay();
+    // glutDestroyWindow invalidates context,
+    // so let's not create room for issue here after close() call
+    if(!isStopped())
+    {
+        glutSwapBuffers();
+        glutPostRedisplay();
+    }
 }
 
 void Viewer::rotateUp() noexcept
@@ -164,6 +178,12 @@ void Viewer::scaleDown() noexcept
 void Viewer::zeroWindowTransforms() noexcept
 {
     rotx = 0; roty = 0; windowScale = 1.f;
+}
+
+bool Viewer::isStopped() const noexcept
+{
+    std::lock_guard lGuard {mutex};
+    return stopped;
 }
 
 }

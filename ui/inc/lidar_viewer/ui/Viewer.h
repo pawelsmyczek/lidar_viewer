@@ -1,7 +1,8 @@
 #ifndef LIDAR_VIEWER_VIEWER_H
 #define LIDAR_VIEWER_VIEWER_H
 
-#include "CygLidarD1.h"
+#include <atomic>
+#include <mutex>
 #include <vector>
 #include <functional>
 
@@ -37,6 +38,9 @@ public:
     /// starts displaying using Config passed as a ctor, shall be used as a main thread loop
     void start() const;
 
+    /// closes the window, shall be used only in signal handlers etc
+    void stop();
+
     void display();
 
     void rotateUp() noexcept;
@@ -59,11 +63,15 @@ public:
                  );
     }
 private:
+    bool isStopped() const noexcept;
+
     std::vector<ViewerFunction> viewerFuncitons;
     Config configuration;
     std::atomic<int> rotx;
     std::atomic<int> roty;
     float windowScale;
+    int windowId;
+    bool stopped;
     mutable std::mutex mutex;
 };
 

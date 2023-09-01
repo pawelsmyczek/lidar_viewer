@@ -1,8 +1,10 @@
-#include "DisplayFunctions.h"
+#include "lidar_viewer/ui/DisplayFunctions.h"
+#include "lidar_viewer/dev/CygLidarD1.h"
 
 #include <GL/glew.h>
 #include <GL/glut.h>
 
+#include <array>
 #include <iostream>
 #include <cmath>
 
@@ -47,7 +49,7 @@ namespace lidar_viewer::ui
 
 void lidar3D_Display(const dev::CygLidarD1* lidar)
 {
-    if(!lidar)
+    if(!lidar || !lidar->get3dFrame())
     {
         return ;
     }
@@ -55,8 +57,8 @@ void lidar3D_Display(const dev::CygLidarD1* lidar)
     constexpr auto frameResolution = dev::CygLidarD1::getFrameWindow();
 
     static MapGlFloat3 positionMap{};
-    constexpr auto minimumDistanceMm                            = 51u;
-    constexpr auto maximumDistanceMm                            = 2000u;
+    constexpr auto minimumDistanceMm        = 51u;
+    constexpr auto maximumDistanceMm        = 2000u;
 
     constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeX    {-1.f, 1.f};
     constexpr std::pair<GLfloat, GLfloat> glFullScreenRangeY    {1.f, -1.f};
@@ -68,7 +70,7 @@ void lidar3D_Display(const dev::CygLidarD1* lidar)
 
     if( pointCloud.size() != frameResolution.first * frameResolution.second )
     {
-        throw std::runtime_error( "mismatched frameResolution and pointCloud.size(), they should match!" );
+        throw std::runtime_error( "mismatched frameResolution and pointCloud.size(), they should match." );
     }
 
     glBegin(GL_POINTS);
@@ -79,13 +81,13 @@ void lidar3D_Display(const dev::CygLidarD1* lidar)
             const auto frameId = y*frameResolution.first + x;
             if( pointCloud[frameId] == 4082u )
             {
-                const MapGlUByte3 rgbValuesForBrokenPoint { 66u, 135u, 245u };
+                static const MapGlUByte3 rgbValuesForBrokenPoint { 66u, 135u, 245u };
                 glColor3ubv( &rgbValuesForBrokenPoint[0] );
                 positionMap =
                         {
-                                mapValue<GLfloat>(glRangeX, glFullScreenRangeX, static_cast<GLfloat>(x)),
-                                mapValue<GLfloat>(glRangeY, glFullScreenRangeY, static_cast<GLfloat>(y)),
-                                mapValue<GLfloat>(glRangeZ, glFullScreenRangeZ, static_cast<GLfloat>(pointCloud[frameId]))
+                            mapValue<GLfloat>(glRangeX, glFullScreenRangeX, static_cast<GLfloat>(x)),
+                            mapValue<GLfloat>(glRangeY, glFullScreenRangeY, static_cast<GLfloat>(y)),
+                            mapValue<GLfloat>(glRangeZ, glFullScreenRangeZ, static_cast<GLfloat>(pointCloud[frameId]))
                         };
                 glVertex3fv(&positionMap[0]);
                 continue ;
@@ -99,9 +101,9 @@ void lidar3D_Display(const dev::CygLidarD1* lidar)
             glColor3ubv( &rgbValues[0] );
             positionMap =
                     {
-                            mapValue<GLfloat>(glRangeX, glFullScreenRangeX, static_cast<GLfloat>(x)),
-                            mapValue<GLfloat>(glRangeY, glFullScreenRangeY, static_cast<GLfloat>(y)),
-                            mapValue<GLfloat>(glRangeZ, glFullScreenRangeZ, static_cast<GLfloat>(pointCloud[frameId]))
+                        mapValue<GLfloat>(glRangeX, glFullScreenRangeX, static_cast<GLfloat>(x)),
+                        mapValue<GLfloat>(glRangeY, glFullScreenRangeY, static_cast<GLfloat>(y)),
+                        mapValue<GLfloat>(glRangeZ, glFullScreenRangeZ, static_cast<GLfloat>(pointCloud[frameId]))
                     };
             glVertex3fv(&positionMap[0]);
         }

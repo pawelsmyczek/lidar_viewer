@@ -12,7 +12,10 @@ class SerialPort
 {
 public:
     explicit SerialPort(const std::string& fileName);
-    ~SerialPort();
+    ~SerialPort() noexcept;
+
+    /// @brief wrapper around system open function
+    [[nodiscard]] int open(const std::string& fileName) const;
 
     /// @brief configures serial port, sets 8N1 type of communication TODO make it configurable
     /// @param baudRate serial port baud rate, can be of any type, but takes into account regular types defined in termios-baud.h
@@ -29,8 +32,8 @@ public:
     /// @param size size of data to write
     void write(const void* ptr, unsigned int size) const;
 
-    /// @brief closes file opened in the ctor
-    void close() const;
+    /// @brief closes stream
+    void close() const noexcept;
 private:
 
     int fd;
