@@ -135,7 +135,7 @@ unsigned int SerialPort::read(void *ptr, unsigned int size, const std::chrono::m
     {
         if( !pollFor(fd, millis, POLLIN))
         {
-            continue ;
+            return rretsum ;
         }
 
         uptr += rret;
@@ -185,6 +185,11 @@ void SerialPort::close() const noexcept
     }
     std::cout << "Closed fd: " << fd << "\n";
     fdClosed = !fdClosed;
+}
+
+void SerialPort::setFd(const int _fd)
+{
+    fd = _fd;
 }
 
 }

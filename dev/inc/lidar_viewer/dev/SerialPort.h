@@ -34,6 +34,10 @@ public:
 
     /// @brief closes stream
     void close() const noexcept;
+
+    /// @brief sets file descriptor
+    /// @param fd file descriptor
+    void setFd(const int fd);
 private:
 
     int fd;
