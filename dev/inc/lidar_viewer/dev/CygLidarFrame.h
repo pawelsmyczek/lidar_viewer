@@ -8,6 +8,8 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <algorithm>
+#include <type_traits>
 
 namespace lidar_viewer::dev
 {
@@ -61,13 +63,13 @@ public:
         return data.repr.checksum_ == inchecksum;
     }
 
-    [[nodiscard]] uint8_t checksum() const
+    /// calculate checksum on length and actual payload
+    [[nodiscard]] uint8_t checksum() const noexcept
     {
         auto checkSum = 0u;
-        for ( auto i = 3u; i <= data.raw.size()-3u; ++i )
-        {
-            checkSum ^= data.raw[i];
-        }
+        const auto sizeOfHeader = data.repr.header_.size();
+        std::for_each(data.raw.cbegin() + sizeOfHeader, data.raw.cend() - (sizeof(data.repr.checksum_)+1u),
+                      [&checkSum](const auto& rawElement) { checkSum ^= rawElement; });
         return checkSum;
     }
 
@@ -78,7 +80,7 @@ public:
   ~Frame() = default;
 
 private:
-    union Data
+    union
     {
         struct Repr
         {
@@ -94,7 +96,7 @@ private:
 
 /// @brief read frame from a serial port
 /// @parameter serial reference to serial port
-template < class RespFrame >
+template < class RespFrame > static inline
 RespFrame read(SerialPort& serial)
 {
     using namespace std::chrono_literals;
@@ -103,7 +105,7 @@ RespFrame read(SerialPort& serial)
     auto rawResponse = const_cast<uint8_t*>(respFrame.raw());
     typename std::remove_const<decltype(expectedFrameHeader)>::type retHeader{};
 
-    if (serial.read(&retHeader[0], expectedFrameHeader.size(), 60ms);
+    if (serial.read(&retHeader[0], expectedFrameHeader.size(), 130ms);
             retHeader != expectedFrameHeader)
     {
         return StatusOr::MakeStatusOrError<RespFrame>(
@@ -130,12 +132,82 @@ RespFrame read(SerialPort& serial)
     return respFrame;
 }
 
+/// @brief read frame from a serial port
+/// @parameter serial reference to serial port
+/// @parameter respFrame reference to output frame
+template < class RespFrame > static inline
+void read(SerialPort& serial, RespFrame& respFrame)
+{
+    using namespace std::chrono_literals;
+    const auto expectedFrameHeader = respFrame.header();
+    auto rawResponse = const_cast<uint8_t*>(respFrame.raw());
+    typename std::remove_const<decltype(expectedFrameHeader)>::type retHeader{};
+
+    if (serial.read(&retHeader[0], expectedFrameHeader.size(), 130ms);
+            retHeader != expectedFrameHeader)
+    {
+        return ;
+    }
+
+    auto readBytesInc = respFrame.header().size();
+    rawResponse += readBytesInc;
+    decltype(RespFrame::size()) returnedSize{};
+
+    if(readBytesInc = serial.read(reinterpret_cast<uint8_t *>(&returnedSize),
+                                                        sizeof(returnedSize), 1ms);
+            readBytesInc != sizeof(returnedSize) || returnedSize != RespFrame::size())
+    {
+        std::cerr << __func__ << ": " << readBytesInc
+                    << " != " << sizeof(returnedSize) << " || "
+                        << returnedSize <<" != " << RespFrame::size() <<"\n";
+        return ;
+    }
+
+    rawResponse += readBytesInc;
+    serial.read(rawResponse, returnedSize - readBytesInc, 6ms);
+}
+
+template < class RespFrame > static inline
+void read(SerialPort& serial, RespFrame* respFrame)
+{
+    if ( !respFrame )
+    {
+        return ;
+    }
+    using namespace std::chrono_literals;
+    const auto expectedFrameHeader = respFrame->header();
+    auto rawResponse = const_cast<uint8_t*>(respFrame->raw());
+    typename std::remove_const<decltype(expectedFrameHeader)>::type retHeader{};
+
+    if (serial.read(&retHeader[0], expectedFrameHeader.size(), 130ms);
+            retHeader != expectedFrameHeader)
+    {
+        return ;
+    }
+
+    auto readBytesInc = respFrame->header().size();
+    rawResponse += readBytesInc;
+    decltype(RespFrame::size()) returnedSize{};
+
+    if(readBytesInc = serial.read(reinterpret_cast<uint8_t *>(&returnedSize),
+                                                        sizeof(returnedSize), 1ms);
+            readBytesInc != sizeof(returnedSize) || returnedSize != RespFrame::size())
+    {
+        std::cerr << __func__ << ": " << readBytesInc
+                    << " != " << sizeof(returnedSize) << " || "
+                        << returnedSize <<" != " << RespFrame::size() <<"\n";
+        return ;
+    }
+
+    rawResponse += readBytesInc;
+    serial.read(rawResponse, returnedSize - readBytesInc, 6ms);
+}
 
 /// @brief write frame to a serial port
 /// @parameter writeFrame frame to write
 /// @parameter serial reference to serial port
 template < uint16_t s >
-void write(Frame<s> writeFrame, SerialPort& serial)
+void write(Frame<s>&& writeFrame, SerialPort& serial)
 {
     serial.write(writeFrame.raw(), sizeof(Frame<s>)-sizeof(typename Frame<s>::Status));
 }

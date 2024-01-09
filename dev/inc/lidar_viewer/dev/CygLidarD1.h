@@ -2,6 +2,7 @@
 #define LIDAR_VIEWER_CYGLIDARD1_H
 
 #include "lidar_viewer/dev/SerialPort.h"
+#include "lidar_viewer/dev/CygLidarFrame.h"
 
 #include <atomic>
 #include <array>
@@ -32,14 +33,14 @@ public:
         BadPixel        = 16004u
     };
 
-    enum class Mode
+    enum class Mode: uint8_t
     {
         Mode2D  = 0x01u,
         Mode3D  = 0x08u,
         Dual    = 0x07u
     };
 
-    enum class BaudRate
+    enum class BaudRate: uint8_t
     {
         B57k6   = 0x39u,
         B115k2  = 0xaau,
@@ -86,8 +87,8 @@ public:
     /// configures io with baudrate
     void ioconfigure(const BaudRate baudRate) const;
 
-    ///  checks if the device is connected
-    bool connected();
+    ///  prints device info, firmware / hardware revision
+    void printDeviceInfo();
 
     /// configures device according to definition of struct Config
     void configure(const Config cfg);
@@ -102,9 +103,9 @@ public:
     /// stop measurement receival thread
     void stop();
 
-    const std::array<uint16_t , 9600u/*160x60*/>* get3dFrame() const;
+    const std::array<uint16_t , 160u * 60u>* get3dFrame() const;
 
-    static constexpr std::pair<unsigned int, unsigned int> getFrameWindow() noexcept(true)
+    static constexpr std::pair<unsigned int, unsigned int> get3dFrameWindow() noexcept
     {
         return { 160u, 60u };
     }
@@ -117,11 +118,27 @@ public:
 
 private:
 
-    void read3dFrame();
+    template < uint16_t FRAME_SIZE, typename ParsingFunction, typename TargetPointCloud>
+    void readAndParseFrame(ParsingFunction&& parsingFunction, TargetPointCloud& targetPointCloud)
+    {
+        static Frame < FRAME_SIZE > returnedFrame {};
+        read(serial, returnedFrame);
+        if(returnedFrame.ok() == StatusOr::Status::BAD)
+        {
+            return ;
+        }
+        const auto returnedPayload = returnedFrame.payload();
+
+        std::lock_guard lGuard{rwMutex};
+        parsingFunction(targetPointCloud, returnedPayload);
+    }
+
+    void readAndParse3dFrame();
+    void readAndParse2dFrame();
 
     SerialPort serial;
-
-    std::array<uint16_t , 9600u/*160x60*/> pointcloud3d;
+    std::array<uint16_t , 160u * 60u> pointcloud3d;
+    std::array<uint16_t , 160u> pointcloud2d;
     std::atomic<bool> stopThread;
     std::future<void> rxFuture;
     mutable std::mutex rwMutex;

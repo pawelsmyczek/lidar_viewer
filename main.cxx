@@ -37,6 +37,7 @@ std::string usageString()
             "\n\t\t-d [deviceName] "
             "\n\t\t-b serialBaudRate { B57k6,B115k2,B250k,B3M } "
             "\n\t\t-l lidarBaudRateConfig { B57k6,B115k2,B250k,B3M } "
+            "\n\t\t-m lidarMode { 2D,3D,Dual } "
             "\n\t\t-f frequencyChannel {0-15} "
             "\n\t\t-p pulseDuration (for 3D) { 0-10000 } [in ms] "
             "\n\t\t-s sensitivity {0-255}"s;
@@ -55,14 +56,15 @@ int main(int argc, char** argv)
     using BaudRate = CygLidarD1::BaudRate;
 
     ::signal(SIGTERM, handleSigTerm);
-    ::signal(SIGINT, handleSigTerm);
+    ::signal(SIGINT, handleSigTerm); // Ctrl-C...
 
     auto opt = 0;
     CygLidarD1::Config lidarCfg{};
+    Mode mode{};
     int speedForSerial {};
     std::string deviceName {};
 
-    while(( opt = ::getopt(argc, argv, "d:b:l:f:p:s:h")) != -1 )
+    while(( opt = ::getopt(argc, argv, "d:b:l:m:f:p:s:h")) != -1 )
     {
         switch ( opt )
         {
@@ -94,17 +96,27 @@ int main(int argc, char** argv)
                               BaudRate::B250k;
                 break;
             }
+            case 'm':
+            {
+                using namespace std::string_literals;
+                const std::string lMode{optarg};
+                mode =
+                lMode == "2D"s? Mode::Mode2D :
+                lMode == "3D"s? Mode::Mode3D :
+                lMode == "Dual"s? Mode::Dual :
+                Mode::Mode3D;
+                break;
+            }
             case 'f':
             {
                 char* endptr = nullptr;
-                auto freqCh = ::strtoul(optarg, &endptr, 10u);
-                if(endptr == optarg || freqCh > 0xfu)
+                lidarCfg.frequencyCh = ::strtoul(optarg, &endptr, 10u);
+                if(endptr == optarg || lidarCfg.frequencyCh > 0xfu)
                 {
                     std::cerr << "Failed to parse the option for frequency channel\n"
                                                     << usageString() << "\n";
                     return -1;
                 }
-                lidarCfg.frequencyCh = freqCh;
                 break;
             }
             case 'p':
@@ -125,14 +137,13 @@ int main(int argc, char** argv)
             case 's':
             {
                 char* endptr = nullptr;
-                auto sensitivity = ::strtoul(optarg, &endptr, 10u);
-                if(endptr == optarg || sensitivity > 0xffu)
+                lidarCfg.sensitivity = ::strtoul(optarg, &endptr, 10u);
+                if(endptr == optarg)
                 {
                     std::cerr << "Failed to parse the option for sensitivity\n"
                                                     << usageString() << "\n";
                     return -1;
                 }
-                lidarCfg.sensitivity = sensitivity;
                 break;
             }
             case 'h':
@@ -161,31 +172,60 @@ int main(int argc, char** argv)
 
     try
     {
-        std::cout << "Opening device: " << deviceName <<"\n";
+        std::cout << "Opening device: " << deviceName << "\n";
 
         SerialPort serial{deviceName};
         serialPtr = &serial;
         serial.configure(speedForSerial);
 
         std::cout << "Starting lidar\n";
-        std::this_thread::sleep_for(1s);
         CygLidarD1 lidar{serial};
         cygLidarD1Ptr = &lidar;
         lidar.configure(lidarCfg);
-        std::this_thread::sleep_for(1s);
-        lidar.start(Mode::Mode3D);
+        lidar.printDeviceInfo();
+
+        lidar.start(mode);
 
         std::cout << "Opening viewer\n";
 
         Viewer viewer{viewerCfg, &argc, argv};
         viewerPtr = &viewer;
-        viewer.registerViewerFunction(lidar3D_Display, &lidar);
+        switch(mode)
+        {
+            case Mode::Mode3D:
+            {
+                viewer.registerViewerFunction(lidar3D_Display, &lidar);
+                break;
+            }
+            case Mode::Mode2D:
+            {
+                viewer.registerViewerFunction(lidar2D_Display, &lidar);
+                break ;
+            }
+            case Mode::Dual:
+            {
+                 // TODO
+                std::cout << "Dual mode to be added in future :)\n";
+                // viewer.registerViewerFunction(lidar3D_Display, &lidar);
+                // viewer.registerViewerFunction(lidar2D_Display, &lidar);
+                // (?)
+                return 0;
+            }
+            default:
+                viewer.registerViewerFunction(lidar3D_Display, &lidar);
+                break;
+        }
+
         viewer.start();
 
     }
     catch ( std::exception& exc )
     {
         std::cerr << "Exception thrown during viewer runtime: " << exc.what() << "\n";
+    }
+    catch( ... )
+    {
+        std::cerr << "Unknown exception thrown during viewer runtime\n";
     }
 
     return 0;

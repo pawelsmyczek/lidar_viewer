@@ -5,6 +5,8 @@
 #include <iostream>
 #include <stdexcept>
 
+using namespace std::chrono_literals;
+
 namespace
 {
 
@@ -45,6 +47,7 @@ uint16_t CygLidarD1::PulseDuration::get() const
 CygLidarD1::CygLidarD1(SerialPort& _serial)
 : serial{_serial}
 , pointcloud3d{}
+, pointcloud2d{}
 , stopThread{false}
 { }
 
@@ -53,7 +56,16 @@ CygLidarD1::~CygLidarD1() noexcept
     stop();
 }
 
-bool CygLidarD1::connected()
+std::ostream& operator << (std::ostream& outStream, const Frame<7>& deviceInfo)
+{
+    for ( const auto value: *deviceInfo.payload() )
+    {
+        outStream << value << " ";
+    }
+    return outStream;
+}
+
+void CygLidarD1::printDeviceInfo()
 {
     using Req = Frame<2u>;
     using Resp = Frame<7u>;
@@ -63,21 +75,20 @@ bool CygLidarD1::connected()
     if (ret.ok())
     {
         auto& retPayload = *ret.payload();
-        static constexpr Resp::Payload expectedPayload{RequestTypes::DeviceInfo, 0x00u, 0x03u, 0x05u, 0x00u, 0x02, 0x02};
-        return expectedPayload == retPayload;
+        std::cout << "Device info: " << ret << "\n";
     }
-    return false;
+    return ;
 }
 
 void CygLidarD1::configure(const Config cfg)
 {
     write( Frame<2u>({RequestTypes::BaudRate, static_cast<uint8_t>(cfg.baudRate)} ), serial );
-
+    std::this_thread::sleep_for(3s);
     const auto pulseDuration = cfg.pulseDuration.get();
     write( Frame<3u>({RequestTypes::SetLightPulseDuration, static_cast<uint8_t>(pulseDuration & 0xffu),
             static_cast<uint8_t>((pulseDuration & 0xff00u) >> 8u)} ), serial );
     write( Frame<2u>({RequestTypes::SetFreqChannel, static_cast<uint8_t>(cfg.frequencyCh)} ), serial );
-    write( Frame<2u>({RequestTypes::SetSensitivity, static_cast<uint8_t>(cfg.sensitivity)} ),     serial );
+    write( Frame<2u>({RequestTypes::SetSensitivity, static_cast<uint8_t>(cfg.sensitivity)} ), serial );
 }
 
 void CygLidarD1::run(Mode mode)
@@ -89,15 +100,17 @@ void CygLidarD1::start(Mode mode)
 {
     run( mode );
 
-    rxFuture = std::async([this]()
+    rxFuture = std::async([this, mode]()
     {
         try
         {
             for( ; !stopThread.load() ; )
             {
-                read3dFrame();
+                mode == Mode::Mode3D ? readAndParse3dFrame()
+                : mode == Mode::Mode2D ? readAndParse2dFrame()
+                : (void)mode; // TODO: dual mode
 #if 0
-                const auto frameResolution = getFrameWindow();
+                const auto frameResolution = get3dFrameWindow();
                 unsigned int frameId = 0u;
                 for ( unsigned int y = 0; y < frameResolution.second; ++y )
                 {
@@ -119,21 +132,14 @@ void CygLidarD1::start(Mode mode)
     });
 }
 
-void CygLidarD1::read3dFrame()
+void CygLidarD1::readAndParse3dFrame()
 {
-    using namespace std::chrono_literals;
-
-    const auto ret = read< Frame<14401u> >(serial);
-    if (!ret.ok())
+    static constexpr auto FRAME_SIZE = static_cast<unsigned int>( 9600.f * 1.5f ) + 1u;
+    auto parsingFunction = [](auto& pointCloud, const auto& returnedPayload )
     {
-        return ;
-    }
-    const auto returnedPayload = ret.payload();
-    {
-        std::lock_guard lGuard{rwMutex};
-        auto frame3dIt = pointcloud3d.begin();
+        auto frame3dIt = pointCloud.begin();
         auto returnedFrameIt = (returnedPayload->begin())+1;
-        for ( ; frame3dIt != pointcloud3d.end() && returnedFrameIt != returnedPayload->end();
+        for ( ; frame3dIt != pointCloud.end() && returnedFrameIt != returnedPayload->end();
                 ++frame3dIt, ++returnedFrameIt )
         {
             const auto firstEl = *returnedFrameIt;
@@ -146,11 +152,31 @@ void CygLidarD1::read3dFrame()
             *frame3dIt = ((secondEl & 0xf0u) >> 4u);
             *frame3dIt |= (thirdEl << 4u);
         }
-    }
-    std::this_thread::sleep_for(1us);
+    };
+    readAndParseFrame<FRAME_SIZE>(parsingFunction, pointcloud3d);
 }
 
-const std::array<uint16_t, 9600u/*160x60*/>* CygLidarD1::get3dFrame() const
+void CygLidarD1::readAndParse2dFrame()
+{
+    static constexpr auto FRAME_SIZE = 322u + 1u;
+    auto parsingFunction = [](auto& pointCloud, const auto& returnedPayload )
+    {
+        auto frame2dIt = pointCloud.begin();
+        auto returnedFrameIt = (returnedPayload->begin())+1;
+        for ( ; frame2dIt != pointCloud.end() && returnedFrameIt != returnedPayload->end();
+                ++frame2dIt, ++returnedFrameIt )
+        {
+            const auto firstEl = *returnedFrameIt;
+            const auto secondEl = *(++returnedFrameIt);
+
+            *frame2dIt = firstEl;
+            *frame2dIt |= ((secondEl & 0xfu) << 8u);
+        }
+    };
+    readAndParseFrame<FRAME_SIZE>(parsingFunction, pointcloud2d);
+}
+
+const std::array<uint16_t, 160u*60u>* CygLidarD1::get3dFrame() const
 {
     std::lock_guard lGuard{rwMutex};
     return &pointcloud3d;
@@ -168,8 +194,6 @@ void CygLidarD1::stop()
     {
         rxFuture.wait();
     }
-
-    // serial.close();
 }
 
 } // namespace lidar_viewer::dev
