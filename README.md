@@ -34,3 +34,6 @@ $ make
 
 $ ./lidar_viewer # run built binary
 
+### Demo
+
+![](https://github.com/pawelsmyczek/lidar_viewer/tree/main/assets/demo22.gif)
