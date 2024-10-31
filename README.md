@@ -2,6 +2,7 @@
 
 Yet another app to view the point cloud from a lidar. Made specifically for __CygLidar D1__.
 
+[![CMake on a Ubuntu](https://github.com/pawelsmyczek/lidar_viewer/actions/workflows/cmake-single-platform.yml/badge.svg?branch=main)](https://github.com/pawelsmyczek/lidar_viewer/actions/workflows/cmake-single-platform.yml)
 ---
 
 ## Motivation
@@ -64,3 +65,8 @@ $ cd lcov-1.16
 
 Build and Install lcov
 $ sudo make install
+
+### Demo
+
+<img src="https://github.com/pawelsmyczek/lidar_viewer/blob/main/assets/demo22.gif" />
+
