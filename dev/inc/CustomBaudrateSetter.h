@@ -6,7 +6,6 @@ namespace lidar_viewer::dev
 {
 
 void setCustomBaudrate(const int fd, const unsigned int baudRate);
-
 }
 
-#endif //LIDAR_VIEWER_CUSTOMBAUDRATESETTER_H
+#endif // LIDAR_VIEWER_CUSTOMBAUDRATESETTER_H

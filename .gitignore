@@ -10,3 +10,4 @@
 cmake-build*/
 build*/
 *.log
+coverage.info
