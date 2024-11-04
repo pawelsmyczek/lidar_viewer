@@ -25,11 +25,8 @@ endif()
 
 add_subdirectory(dev)
 add_subdirectory(ui)
-
+add_subdirectory(viewer)
 
 if(BUILD_FOR_UNIT_TESTS)
     add_subdirectory(tests)
 endif()
-
-add_executable(lidar_viewer main.cxx)
-target_link_libraries(lidar_viewer ui dev pthread)

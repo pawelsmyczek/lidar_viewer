@@ -7,7 +7,6 @@
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <asm/ioctls.h>
-#include <csignal>
 #include <cstring>
 
 #include <chrono>
@@ -50,6 +49,12 @@ namespace lidar_viewer::dev
 SerialPort::SerialPort(const std::string& fileName)
 : fd{ open(fileName) }
 { }
+
+SerialPort::SerialPort(const std::string &fileName, const unsigned int baudRate)
+: fd{ open(fileName) }
+{
+    configure(baudRate);
+}
 
 SerialPort::~SerialPort() noexcept
 {
@@ -150,7 +155,7 @@ unsigned int SerialPort::read(void *ptr, unsigned int size, const std::chrono::m
     return rretsum;
 }
 
-void SerialPort::write(const void *ptr, unsigned int size) const
+void SerialPort::write(const void *ptr, unsigned int size, bool ) const noexcept(false)
 {
     using namespace std::chrono_literals;
     using namespace std::string_literals;
@@ -190,6 +195,11 @@ void SerialPort::close() const noexcept
 void SerialPort::setFd(const int _fd)
 {
     fd = _fd;
+}
+
+void SerialPort::open()
+{
+
 }
 
 }

@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
+#include <iostream>
 
 namespace
 {
@@ -76,24 +77,25 @@ void special(int key, int , int)
 namespace lidar_viewer::ui
 {
 
-Viewer::Viewer(Config configuration_,
-               int* argc, char** argv) noexcept
+Viewer::Viewer(Config configuration_) noexcept
     : configuration{configuration_}, rotx{}, roty{}, windowScale{1.f}, windowId{}, stopped{false}
 {
     if(!viewerPtr)
     {
         viewerPtr = this;
     }
+}
+
+Viewer::~Viewer() noexcept = default;
+
+void Viewer::start(int* argc, char** argv)
+{
     glutInit(argc, argv);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION); // continue execution ofter window close to cleanup properly
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(static_cast<int>(configuration.w),
                        static_cast<int>(configuration.h));
     windowId = glutCreateWindow("LidarViewer");
-}
-
-void Viewer::start() const
-{
     glutDisplayFunc( disp );
     glutReshapeFunc( reshape );
     glutSpecialFunc( special );
@@ -103,7 +105,7 @@ void Viewer::start() const
 
 void Viewer::stop()
 {
-    std::lock_guard lGuard {mutex};
+    std::cout << "trying to destroy window : " << windowId << '\n';
     stopped = true;
     glutDestroyWindow(windowId);
 }
@@ -132,7 +134,11 @@ void Viewer::display()
             continue;
         }
         glPushMatrix();
-        func.function(func.worker);
+        if(!func.function(func.worker))
+        {
+            glPopMatrix();
+            stop();
+        }
         glPopMatrix();
     }
     glFlush();
@@ -182,7 +188,6 @@ void Viewer::zeroWindowTransforms() noexcept
 
 bool Viewer::isStopped() const noexcept
 {
-    std::lock_guard lGuard {mutex};
     return stopped;
 }
 

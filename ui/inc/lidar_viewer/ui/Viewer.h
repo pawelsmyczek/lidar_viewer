@@ -12,7 +12,7 @@ namespace lidar_viewer::ui
 ///@brief function to be viewed by viewer
 struct ViewerFunction
 {
-    void(*function)(const void*);
+    bool(*function)(const void*);
     const void* worker;
 };
 
@@ -33,10 +33,11 @@ public:
         ViewType viewType;
     };
 
-    Viewer(Config configuration, int* argc, char** argv) noexcept;
+    Viewer(Config configuration) noexcept;
+    ~Viewer() noexcept;
 
     /// starts displaying using Config passed as a ctor, shall be used as a main thread loop
-    void start() const;
+    void start(int* argc, char** argv);
 
     /// closes the window, shall be used only in signal handlers etc
     void stop();
@@ -55,10 +56,10 @@ public:
     /// @param func object drawing function
     /// @param obj object to work on
     template < class Object >
-    void registerViewerFunction( void(*func)(const Object*), const Object* obj)
+    void registerViewerFunction( bool(*func)(const Object*), const Object* obj)
     {
         viewerFuncitons.push_back(
-                ViewerFunction{ .function = reinterpret_cast<void (*)(const void*)>(func),
+                ViewerFunction{ .function = reinterpret_cast<bool (*)(const void*)>(func),
                                 .worker = obj }
                  );
     }
@@ -71,7 +72,7 @@ private:
     std::atomic<int> roty;
     float windowScale;
     int windowId;
-    bool stopped;
+    std::atomic<bool> stopped;
     mutable std::mutex mutex;
 };
 

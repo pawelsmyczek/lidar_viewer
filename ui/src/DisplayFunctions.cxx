@@ -5,7 +5,6 @@
 #include <GL/glut.h>
 
 #include <array>
-#include <iostream>
 #include <cmath>
 
 using MapGlFloat3 = std::array<GLfloat, 3>;
@@ -19,20 +18,6 @@ template <typename ValueType>
 GLubyte valueToRGBByte(unsigned int scalar, ValueType value ) noexcept
 {
     return static_cast<GLubyte>(::roundf(static_cast<float>(value) * static_cast<float>(scalar) ));
-    // const auto ratio = static_cast<float>(value-minv) / static_cast<float>(range);
-    // auto a = (1.f - ratio) / .25f;
-    // auto x = ::floorf(a);
-    // auto y = static_cast<GLubyte>(::floorf(255.f * (a - x)));
-
-    // switch(static_cast<uint8_t>(x))
-    // {
-    //     case 0u: return { 255u,                         y,                            0u};
-    //     case 1u: return { static_cast<GLubyte>(255u-y), 255u,                         0u};
-    //     case 2u: return { 0u,                           255u,                         y};
-    //     case 3u: return { 0u,                           static_cast<GLubyte>(255u-y), 255u};
-    //     case 4u: return { 0u,                           0u,                           255u};
-    // }
-    // return { 0u, 0u, 0u };
 }
 
 template<typename tVal>
@@ -64,13 +49,16 @@ tVal mapValue(tVal aFirst, tVal bFirst, tVal upperNormScalar, tVal inVal) noexce
 namespace lidar_viewer::ui
 {
 
-void lidar3D_Display(const dev::CygLidarD1* lidar) noexcept
+bool lidar3D_Display(const dev::CygLidarD1* lidar) noexcept
 {
-    if(!lidar || !lidar->get3dFrame())
+    if(!lidar)
     {
-        return ;
+        return false;
     }
-    const auto& pointCloud = *lidar->get3dFrame();
+    if(lidar->failedToRead())
+    {
+        return false;
+    }
     constexpr auto frameResolution = dev::CygLidarD1::get3dFrameWindow();
 
     constexpr auto minimumDistanceMm        = 51u;
@@ -99,53 +87,51 @@ void lidar3D_Display(const dev::CygLidarD1* lidar) noexcept
     constexpr auto yUpperNormScalar = bUpperNormGlFullScreenRangeY / aUpperNormGlFullScreenRangeY;
     constexpr auto zUpperNormScalar = bUpperNormGlFullScreenRangeZ / aUpperNormGlFullScreenRangeZ;
 
-    glBegin(GL_POINTS);
-    // for ( auto i = 0u; i < (fullFrameSize); ++i)
-    // {
-    //     auto elementOfFrame = pointCloud[i];
-    //     auto x = i % frameResolution.first;
-    //     auto y = i / frameResolution.first;
-    //     rgbValues = {valueRangeToRGBByte(minimumDistanceMm, maximumDistanceMm, elementOfFrame)};
-
-    //     positionMap = {
-    //          mapValue<GLfloat>(glRangeX, glFullScreenRangeX, static_cast<GLfloat>(x)),
-    //          mapValue<GLfloat>(glRangeY, glFullScreenRangeY, static_cast<GLfloat>(y)),
-    //          mapValue<GLfloat>(glRangeZ, glFullScreenRangeZ, static_cast<GLfloat>(elementOfFrame))
-    //      };
-    //     glVertex3fv( positionMapData );
-    //     glColor3ubv( rgbValuesData );
-    // }
-    for ( auto y = 0u; y < frameResolution.second; ++y )
+    lidar->use3dPointCloud([&frameResolution](const auto& pointCloud)
     {
-        for ( auto x = 0u; x < frameResolution.first; ++x )
+        glBegin(GL_POINTS);
+        for ( auto y = 0u; y < frameResolution.second; ++y )
         {
-            auto elementOfFrame = pointCloud[y*frameResolution.first + x];
-            // omit every point not fitting in range, even error frames
-            if((elementOfFrame > maximumDistanceMm)
-                        | (elementOfFrame < minimumDistanceMm))
-                continue ;
+            for ( auto x = 0u; x < frameResolution.first; ++x )
+            {
+                auto elementOfFrame = pointCloud[y*frameResolution.first + x];
+                // omit every point not fitting in range, even error frames
+                if((elementOfFrame > maximumDistanceMm)
+                   | (elementOfFrame < minimumDistanceMm))
+                    continue ;
 
-            MapGlUByte3 rgbValues{
-                valueToRGBByte(gScalar, elementOfFrame),
-                valueToRGBByte(rScalar, elementOfFrame),
-                valueToRGBByte(bScalar, elementOfFrame)
-            };
+                MapGlUByte3 rgbValues{
+                        valueToRGBByte(gScalar, elementOfFrame),
+                        valueToRGBByte(rScalar, elementOfFrame),
+                        valueToRGBByte(bScalar, elementOfFrame)
+                };
 
-            MapGlFloat3 positionMap{
-                 mapValue(glRangeX.first, glFullScreenRangeX.first, xUpperNormScalar, static_cast<GLfloat>(x)),
-                 mapValue(glRangeY.first, glFullScreenRangeY.first, yUpperNormScalar, static_cast<GLfloat>(y)),
-                 mapValue(glRangeZ.first, glFullScreenRangeZ.first, zUpperNormScalar, static_cast<GLfloat>(elementOfFrame))
-             };
-            glVertex3fv( positionMap.data() );
-            glColor3ubv( rgbValues.data() );
+                MapGlFloat3 positionMap{
+                        mapValue(glRangeX.first, glFullScreenRangeX.first, xUpperNormScalar, static_cast<GLfloat>(x)),
+                        mapValue(glRangeY.first, glFullScreenRangeY.first, yUpperNormScalar, static_cast<GLfloat>(y)),
+                        mapValue(glRangeZ.first, glFullScreenRangeZ.first, zUpperNormScalar, static_cast<GLfloat>(elementOfFrame))
+                };
+                glVertex3fv( positionMap.data() );
+                glColor3ubv( rgbValues.data() );
+            }
         }
-    }
-    glEnd();
+        glEnd();
+    });
+    return true;
 }
 
-void lidar2D_Display(const dev::CygLidarD1*)
+bool lidar2D_Display(const dev::CygLidarD1* lidar)
 {
-    // TODO
+
+    if(!lidar)
+    {
+        return false;
+    }
+    lidar->use2dPointCloud([]([[maybe_unused]]const auto& pointCloud)
+       {
+           // TODO
+       });
+    return true;
 }
 
 }
