@@ -2,6 +2,7 @@
 .idea/
 .mxproject
 .project
+.vscode
 *.xml
 *.ioc
 *.cfg
