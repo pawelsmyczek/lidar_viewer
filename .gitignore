@@ -2,6 +2,7 @@
 .idea/
 .mxproject
 .project
+.vscode
 *.xml
 *.ioc
 *.cfg
@@ -10,3 +11,4 @@
 cmake-build*/
 build*/
 *.log
+coverage.info
