@@ -1,12 +1,14 @@
 #include "lidar_viewer/dev/SerialPort.h"
 #include "lidar_viewer/dev/CygLidarD1.h"
 #include "lidar_viewer/ui/Viewer.h"
-#include "lidar_viewer/ui/DisplayFunctions.h"
+#include "lidar_viewer/ui/DisplayPointCloud.h"
 #include "lidar_viewer/dev/BinaryFile.h"
+#include "lidar_viewer/ui/DisplayOctreeFromPointCloud.h"
+#include "lidar_viewer/ui/DisplayFlatDepthImage.h"
+#include "lidar_viewer/ui/DisplayStatistics.h"
 
 #include <iostream>
 #include <functional>
-#include <memory>
 
 #include <unistd.h>
 #include <csignal>
@@ -70,8 +72,7 @@ int main(int argc, char** argv)
                           .x = 0u,
                           .y = 0u,
                           .w = 1596u, // 160 / 60 = 2.66(7)
-                          .h = 600u,
-                          .viewType = Viewer::ViewType::PointCloud
+                          .h = 600u
                   }};
 
     while( ( opt = ::getopt(argc, argv, "d:f:b:l:m:c:p:s:o:h")) != -1 )
@@ -230,31 +231,11 @@ int main(int argc, char** argv)
             input.close();
             frameWriter.stop();
         };
-        switch(mode)
-        {
-            case Mode::Mode3D:
-            {
-                viewer.registerViewerFunction(lidar3D_Display, &lidar);
-                break;
-            }
-            case Mode::Mode2D:
-            {
-                viewer.registerViewerFunction(lidar2D_Display, &lidar);
-                break ;
-            }
-            case Mode::Dual:
-            {
-                 // TODO
-                std::cout << "Dual mode to be added in future :)\n";
-                // viewer->registerViewerFunction(lidar3D_Display, &lidar);
-                // viewer->registerViewerFunction(lidar2D_Display, &lidar);
-                // (?)
-                return EXIT_SUCCESS;
-            }
-            default:
-                viewer.registerViewerFunction(lidar3D_Display, &lidar);
-                break;
-        }
+
+        viewer.registerViewerFunction(Viewer::ViewType::Flat, displayFlatDepthImage, &lidar);
+        viewer.registerViewerFunction(Viewer::ViewType::PointCloud, displayPointCloud3D, &lidar);
+        viewer.registerViewerFunction(Viewer::ViewType::Octree, displayOctreeFromPointCloud, &lidar);
+        viewer.registerViewerFunction(Viewer::ViewType::Statistics, displayStatistics);
 
         std::cout << "Opening viewer\n";
         viewer.start(&argc, argv);

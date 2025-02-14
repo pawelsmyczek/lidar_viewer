@@ -2,7 +2,10 @@
 #include "lidar_viewer/dev/CygLidarD1.h"
 #include "lidar_viewer/dev/SerialPort.h"
 #include "lidar_viewer/ui/Viewer.h"
-#include "lidar_viewer/ui/DisplayFunctions.h"
+#include "lidar_viewer/ui/DisplayPointCloud.h"
+#include "lidar_viewer/ui/DisplayFlatDepthImage.h"
+#include "lidar_viewer/ui/DisplayOctreeFromPointCloud.h"
+#include "lidar_viewer/ui/DisplayStatistics.h"
 
 #include <array>
 
@@ -19,18 +22,22 @@ TEST(SmokeTestLidarViewer, SmokeTestLidarViewer3DMode) {
     using namespace std::chrono_literals;
 
     int argc = 0;
-    char ** argv = nullptr;
+    char** argv = nullptr;
     auto executeBasicViewManipulationKeyPresses = []()
     {
         // allow the main thread to start the window
         std::this_thread::sleep_for(2s);
         const auto toolToExecuteCommands = "xdotool"s;
 
-        std::array<std::string, 7> keysToPress
+        std::array<std::string, 11> keysToPress
                 {
                         "equal"s,
                         "minus"s,
                         "b"s,
+                        "1"s,
+                        "2"s,
+                        "3"s,
+                        "s"s,
                         "Up"s,
                         "Down"s,
                         "Left"s,
@@ -48,8 +55,7 @@ TEST(SmokeTestLidarViewer, SmokeTestLidarViewer3DMode) {
                     .x = 0u,
                     .y = 0u,
                     .w = 1596u, // 160 / 60 = 2.66(7)
-                    .h = 600u,
-                    .viewType = Viewer::ViewType::PointCloud
+                    .h = 600u
             };
     try
     {
@@ -65,7 +71,11 @@ TEST(SmokeTestLidarViewer, SmokeTestLidarViewer3DMode) {
         auto commandsTestingThread = std::async(std::launch::async, executeBasicViewManipulationKeyPresses);
         std::cout << "Opening viewer\n";
         Viewer viewer{viewerCfg};
-        viewer.registerViewerFunction(lidar3D_Display, &lidar);
+
+        viewer.registerViewerFunction(Viewer::ViewType::Flat, displayFlatDepthImage, &lidar);
+        viewer.registerViewerFunction(Viewer::ViewType::PointCloud, displayPointCloud3D, &lidar);
+        viewer.registerViewerFunction(Viewer::ViewType::Octree, displayOctreeFromPointCloud, &lidar);
+        viewer.registerViewerFunction(Viewer::ViewType::Statistics, displayStatistics);
         viewer.start(&argc, argv);
         if(commandsTestingThread.valid())
         {

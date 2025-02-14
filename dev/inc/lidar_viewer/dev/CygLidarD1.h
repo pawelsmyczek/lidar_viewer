@@ -93,7 +93,12 @@ public:
     using PointCloud2D = std::array<uint16_t , 160u>;
 
     /// accessor function for 3d point cloud
-    using PointCloud3DAccessorFunction = std::function<void( const PointCloud3D& )>;
+    using PointCloud3DAccessorFunction = std::function<void( const PointCloud3D&)>;
+
+    /// accessor function for 3d point cloud
+    template <typename ...Args>
+    using PointCloud3DAccessorFunctionWithArgs = std::function<void( const PointCloud3D&, Args&... )>;
+
     /// accessor function for 3d point cloud
     using PointCloud2DAccessorFunction = std::function<void( const PointCloud2D& )>;
 
@@ -143,6 +148,19 @@ public:
     /// @param accessor3d function to access the 3d structure
     void use3dPointCloud(PointCloud3DAccessorFunction&& accessor3d) const;
 
+    /// uses the 3D point cloud without modifying it, atomic access
+    /// @param accessor3d function to access the 3d structure
+    template <typename ... Args>
+    void use3dPointCloudWithArgs(PointCloud3DAccessorFunctionWithArgs<Args&...> accessor3d, Args&... args) const
+    {
+        std::lock_guard lGuard{rwMutex};
+        if (!accessor3d)
+        {
+            return;
+        }
+        accessor3d(pointcloud3d, args...);
+    }
+
     /// uses the 2D point cloud without modifying it, atomic access
     /// @param accessor2d function to access the 2d structure
     void use2dPointCloud(PointCloud2DAccessorFunction&& accessor2d) const;
@@ -174,7 +192,7 @@ private:
         try
         {
                 const auto status = read(ioStream, returnedFrame);
-                if(status == StatusOr::Status::BAD)
+                if(status == Status::BAD)
                 {
                     return ;
                 }
@@ -234,10 +252,8 @@ public:
             }
             catch (std::exception const & e)
             {
-                //                stopThread.store(true);
                 std::stringstream sstream{};
                 std::cerr << "Exception in point cloud reader operation: \n"s << e.what() << '\n';
-//                throw std::runtime_error{sstream.str()};
             }
             catch (...)
             {
@@ -270,9 +286,6 @@ public:
 private:
 
     PointCloudProvider& lidar;
-    PointCloudProvider::PointCloud3D pointcloud3d;
-    PointCloudProvider::PointCloud2D pointcloud2d;
-
     std::atomic<bool> stopThread;
     std::future<void> rxFuture;
 };

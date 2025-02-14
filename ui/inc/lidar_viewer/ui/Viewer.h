@@ -2,27 +2,26 @@
 #define LIDAR_VIEWER_VIEWER_H
 
 #include <atomic>
+#include <functional>
+#include <iostream>
 #include <mutex>
 #include <vector>
-#include <functional>
+#include <thread>
+#include <sstream>
 
 namespace lidar_viewer::ui
 {
-
-///@brief function to be viewed by viewer
-struct ViewerFunction
-{
-    bool(*function)(const void*);
-    const void* worker;
-};
 
 /// @brief viewer, performs display actions using registered objects via registerViewerFunction
 class Viewer
 {
 public:
-    enum class ViewType
+    enum class ViewType: uint8_t
     {
-        Flat, PointCloud
+        Flat,
+        PointCloud,
+        Octree,
+        Statistics
     };
     struct Config
     {
@@ -30,7 +29,6 @@ public:
         unsigned int y;
         unsigned int w;
         unsigned int h;
-        ViewType viewType;
     };
 
     Viewer(Config configuration) noexcept;
@@ -52,21 +50,32 @@ public:
     void scaleDown() noexcept;
     void zeroWindowTransforms() noexcept;
 
-    /// @brief registers a function to draw a particular object
+    /// @brief registers a drawing function
+    /// @param viewType type of viewer function
     /// @param func object drawing function
-    /// @param obj object to work on
-    template < class Object >
-    void registerViewerFunction( bool(*func)(const Object*), const Object* obj)
+    /// @param args aruments to drawing function
+    template < typename Func, typename ... Args  >
+    void registerViewerFunction(ViewType viewType, Func&& func, Args && ... args )
     {
-        viewerFuncitons.push_back(
-                ViewerFunction{ .function = reinterpret_cast<bool (*)(const void*)>(func),
-                                .worker = obj }
-                 );
+        if(auto iter = viewerFunctions.find(viewType); iter != viewerFunctions.end())
+        {
+            std::cout << "Function already registered\n";
+            return ;
+        }
+
+        viewerFunctions.emplace(viewType, std::bind(std::forward<Func>(func)
+                , std::forward<Args>(args)...));
     }
+
+    void enableFunction(ViewType viewType);
+    void disableFunction(ViewType viewType);
+    void toggleFunction(ViewType viewType);
+
 private:
     bool isStopped() const noexcept;
 
-    std::vector<ViewerFunction> viewerFuncitons;
+    std::unordered_map<ViewType, std::function<bool()>> viewerFunctions;
+    std::vector<ViewType> enabledFunctions;
     Config configuration;
     std::atomic<int> rotx;
     std::atomic<int> roty;
@@ -74,8 +83,12 @@ private:
     int windowId;
     std::atomic<bool> stopped;
     mutable std::mutex mutex;
+    std::chrono::system_clock::time_point nextUpdate;
+    std::chrono::milliseconds nextUpdateTime;
 };
 
-}
+std::ostream& operator << (std::ostream& ostream, Viewer::ViewType viewType);
+
+} // namespace lidar_viewer::ui
 
 #endif //LIDAR_VIEWER_VIEWER_H

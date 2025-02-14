@@ -22,6 +22,10 @@ IoStream::~IoStream() noexcept
 {
     try
     {
+        if(!ioStreamBase)
+        {
+            return ;
+        }
         ioStreamBase->close();
     }
     catch ( ... )
