@@ -2,16 +2,13 @@
 .idea/
 .mxproject
 .project
+.vscode
 *.xml
 *.ioc
 *.cfg
 *.svd
 *.pdf
-.vimspector.json
-.clang*
 cmake-build*/
 build*/
 *.log
 coverage.info
-compile_commands.json
-.cache/
