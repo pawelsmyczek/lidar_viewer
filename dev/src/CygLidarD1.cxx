@@ -23,8 +23,6 @@ enum RequestTypes
     BaudRate = 0x12u
 };
 
-using Req2 = lidar_viewer::dev::Frame<2u>;
-using Req3 = lidar_viewer::dev::Frame<3u>;
 
 }
 
@@ -188,103 +186,9 @@ void CygLidarD1::use2dFrame(CygLidarD1::Frame2DAccessorFunction &&accessor2d) co
     accessor2d(frame2D);
 }
 
-void CygLidarD1::readFrame3d()
-{
-    std::lock_guard lGuard{rwMutex};
-    read(ioStream, frame3D);
-}
-
-void CygLidarD1::readFrame2d()
-{
-    std::lock_guard lGuard{rwMutex};
-    read(ioStream, frame3D);
-}
-
-void CygLidarD1::parse3dFrameToPointCloud(CygLidarD1::PointCloud3D &pointCloud, const CygLidarD1::Frame3D &frame) const
-{
-    auto frame3dIt = pointCloud.begin();
-    auto returnedFrameIt = (frame.payload()->begin())+1;
-    for ( ; frame3dIt != pointCloud.end() && returnedFrameIt != frame.payload()->end();
-            ++frame3dIt, ++returnedFrameIt )
-    {
-        const auto firstEl = *returnedFrameIt;
-        const auto secondEl = *(++returnedFrameIt);
-        const auto thirdEl = *(++returnedFrameIt);
-
-        *frame3dIt = firstEl;
-        *frame3dIt |= ((secondEl & 0xfu) << 8u);
-        frame3dIt++;
-        *frame3dIt = ((secondEl & 0xf0u) >> 4u);
-        *frame3dIt |= (thirdEl << 4u);
-    }
-}
-
-void CygLidarD1::parse2dFrameToPointCloud(CygLidarD1::PointCloud2D &pointCloud, const CygLidarD1::Frame2D &frame) const
-{
-    auto frame2dIt = pointCloud.begin();
-    auto returnedFrameIt = (frame.payload()->begin())+1;
-    for ( ; frame2dIt != pointCloud.end() && returnedFrameIt != frame.payload()->end();
-            ++frame2dIt, ++returnedFrameIt )
-    {
-        const auto firstEl = *returnedFrameIt;
-        const auto secondEl = *(++returnedFrameIt);
-
-        *frame2dIt = firstEl;
-        *frame2dIt |= ((secondEl & 0xfu) << 8u);
-    }
-}
-
 bool CygLidarD1::failedToRead() const
 {
     return failureInRead.load();
-}
-
-FrameWriter::FrameWriter(const CygLidarD1& _lidar, IoStream& _ioStream)
-: lidar{_lidar}
-, ioStream{_ioStream}
-, stopThread{false}
-, rxFuture{}
-{ }
-
-FrameWriter::~FrameWriter() noexcept
-{
-    stop();
-}
-
-void FrameWriter::start()
-{
-    rxFuture = std::async([this]()
-    {
-    try
-    {
-        for( ; !stopThread.load() ; )
-        {
-            lidar.use3dFrame([this](const auto& frame)
-            {
-                ioStream.write(frame.raw(), frame.rawSize());
-            });
-            std::this_thread::sleep_for(5ms);
-        }
-    } catch (const std::exception& e)
-    {
-        stop();
-        std::cerr << "Failure in point cloud writer operation: "s + e.what() << '\n';
-        throw ;
-    }
-    });
-}
-
-void FrameWriter::stop()
-{
-    if ( stopThread.load() )
-    {
-        return ;
-    }
-    stopThread.store(true);
-    if (rxFuture.valid())
-    {
-        rxFuture.wait();
-    }
 }
 
 } // namespace lidar_viewer::dev

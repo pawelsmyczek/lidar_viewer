@@ -24,6 +24,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL Debug)
 endif()
 
 add_subdirectory(dev)
+add_subdirectory(geometry)
 add_subdirectory(ui)
 add_subdirectory(viewer)
 

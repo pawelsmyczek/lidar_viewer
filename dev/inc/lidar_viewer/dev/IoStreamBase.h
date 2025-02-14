@@ -30,8 +30,8 @@ struct IoStreamBase
 
     IoStreamBase(const IoStreamBase& ) = delete;
     IoStreamBase& operator = (const IoStreamBase& ) = delete;
-    IoStreamBase(IoStreamBase&& ) = delete;
-    IoStreamBase& operator = (IoStreamBase&& ) = delete;
+    IoStreamBase(IoStreamBase&& ) = default;
+    IoStreamBase& operator = (IoStreamBase&& ) = default;
 
 };
 

@@ -3,6 +3,11 @@
 namespace lidar_viewer::dev
 {
 
+void IoStream::open()
+{
+    ioStreamBase->open();
+}
+
 unsigned int IoStream::read(void *ptr, unsigned int size, const std::chrono::milliseconds millis) const noexcept(false)
 {
     return ioStreamBase->read(ptr, size, millis);
@@ -22,6 +27,10 @@ IoStream::~IoStream() noexcept
 {
     try
     {
+        if(!ioStreamBase)
+        {
+            return ;
+        }
         ioStreamBase->close();
     }
     catch ( ... )
