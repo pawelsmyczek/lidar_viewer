@@ -5,7 +5,11 @@ find_package(GTest REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -O0 -fprofile-arcs -ftest-coverage")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
 
-add_executable(${NAME} UnitTest.cxx)
+add_executable(${NAME}  StaturOrTest.cxx
+                        BinaryFileTest.cxx
+                        CygLidarD1Test.cxx
+                        CyglidarFrameTest.cxx
+                        ViewerTest.cxx)
 
 target_link_libraries(${NAME} GTest::GTest GTest::Main lidar_viewer_device lidar_viewer_ui)
 

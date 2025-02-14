@@ -44,6 +44,19 @@ void keyboard(unsigned char key, int , int)
         case 'b':
             viewerPtr->zeroWindowTransforms();
             break;
+        case '1':
+            viewerPtr->toggleFunction(lidar_viewer::ui::Viewer::ViewType::Flat);
+            break;
+        case '2':
+            viewerPtr->toggleFunction(lidar_viewer::ui::Viewer::ViewType::PointCloud);
+            break;
+        case '3':
+            viewerPtr->toggleFunction(lidar_viewer::ui::Viewer::ViewType::Octree);
+            break;
+        case 's':
+            viewerPtr->toggleFunction(lidar_viewer::ui::Viewer::ViewType::Statistics);
+            break;
+
         default:
             break;
     }
@@ -78,7 +91,14 @@ namespace lidar_viewer::ui
 {
 
 Viewer::Viewer(Config configuration_) noexcept
-    : configuration{configuration_}, rotx{}, roty{}, windowScale{1.f}, windowId{}, stopped{false}
+    : configuration{configuration_}
+    , rotx{}
+    , roty{}
+    , windowScale{1.f}
+    , windowId{}
+    , stopped{false}
+    , nextUpdate{std::chrono::system_clock::now()}
+    , nextUpdateTime{std::chrono::milliseconds(16)}
 {
     if(!viewerPtr)
     {
@@ -86,7 +106,21 @@ Viewer::Viewer(Config configuration_) noexcept
     }
 }
 
-Viewer::~Viewer() noexcept = default;
+Viewer::~Viewer() noexcept
+{
+    if(stopped)
+    {
+        return ;
+    }
+    try
+    {
+        stop();
+    }
+    catch ( ... )
+    {
+
+    }
+}
 
 void Viewer::start(int* argc, char** argv)
 {
@@ -112,7 +146,20 @@ void Viewer::stop()
 
 void Viewer::display()
 {
+    const auto now = std::chrono::system_clock::now();
 
+    // try to keep constant 60FPS
+    if(now <= nextUpdate)
+    {
+        // glutDestroyWindow invalidates context,
+        // so let's not create room for issue here after close() call
+        if(!isStopped())
+        {
+            glutSwapBuffers();
+            glutPostRedisplay();
+        }
+        return;
+    }
     glClearColor( 0.f, 0.f, 0.f, 0.f );
     glClear( GL_COLOR_BUFFER_BIT );
 
@@ -122,25 +169,38 @@ void Viewer::display()
     // identity matrix - load unit matrix
     glLoadIdentity();
 
-    glScalef( windowScale, windowScale, windowScale );
+    glPushMatrix();
 
-    glRotatef(static_cast<float>(rotx), 1.f, 0.f, 0.f);
-    glRotatef(static_cast<float>(roty), 0.f, 1.0, 0.f );
-
-    for( auto& func: viewerFuncitons )
+    for( const auto& [viewType, func]: viewerFunctions )
     {
-        if(!func.worker || !func.function)
+
+        std::lock_guard lGuard{mutex};
+        auto iter = std::find(enabledFunctions.begin(), enabledFunctions.end(), viewType);
+        if(iter == enabledFunctions.end())
+        {
+            continue ;
+        }
+        if(!func)
         {
             continue;
         }
-        glPushMatrix();
-        if(!func.function(func.worker))
+
+        if(viewType <= ViewType::Octree) // scale / rotate everything but the text
+        {
+            glScalef( windowScale, windowScale, windowScale );
+
+            glRotatef(static_cast<float>(rotx), 1.f, 0.f, 0.f);
+            glRotatef(static_cast<float>(roty), 0.f, 1.0, 0.f );
+        }
+
+        if(!func())
         {
             glPopMatrix();
             stop();
         }
-        glPopMatrix();
     }
+    glPopMatrix();
+
     glFlush();
     // glutDestroyWindow invalidates context,
     // so let's not create room for issue here after close() call
@@ -149,6 +209,7 @@ void Viewer::display()
         glutSwapBuffers();
         glutPostRedisplay();
     }
+    nextUpdate = now + nextUpdateTime;
 }
 
 void Viewer::rotateUp() noexcept
@@ -191,4 +252,51 @@ bool Viewer::isStopped() const noexcept
     return stopped;
 }
 
+void Viewer::enableFunction(Viewer::ViewType viewType)
+{
+
+    std::lock_guard lGuard{mutex};
+    if(viewType <= ViewType::Octree)
+    {
+        // erase remove idiom - replace an existing display function with a new one
+        enabledFunctions.erase(std::remove_if(enabledFunctions.begin(), enabledFunctions.end(),
+                 [](const auto& type) {return type <= ViewType::Octree;}), enabledFunctions.end());
+    }
+    enabledFunctions.emplace_back(viewType);
 }
+
+void Viewer::disableFunction(Viewer::ViewType viewType)
+{
+    std::lock_guard lGuard{mutex};
+    // erase remove idiom - remove only one
+    enabledFunctions.erase(std::remove_if(enabledFunctions.begin(), enabledFunctions.end(),
+                                          [&](const auto& type) {return type == viewType;}));
+}
+
+void Viewer::toggleFunction(Viewer::ViewType viewType)
+{
+    if (auto iter = std::find_if(enabledFunctions.begin(), enabledFunctions.end(),
+                                 [&](const auto enabled) { return enabled == viewType;});
+            iter == enabledFunctions.end())
+    {
+        enableFunction(viewType);
+    }
+    else
+    {
+        disableFunction(viewType);
+    }
+}
+
+std::ostream& operator << (std::ostream& ostream, Viewer::ViewType viewType)
+{
+    using ViewType = Viewer::ViewType;
+    std::stringstream sstream{};
+    sstream << (viewType == ViewType::Statistics ? "Statistics" :
+                viewType == ViewType::Octree ? "Octree" :
+                viewType == ViewType::PointCloud ? "PointCloud" :
+                viewType == ViewType::Flat ? "FlatImage" : "Unknown");
+    ostream << sstream.str();
+    return ostream;
+}
+
+} // namespace lidar_viewer::ui
