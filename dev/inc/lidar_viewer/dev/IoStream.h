@@ -12,9 +12,13 @@ namespace lidar_viewer::dev
 /// base for any I/O system
 struct IoStream
 {
+//    ///brief templated constructor
+//    template <typename IoType, typename ... Args>
+//    IoStream(Args ... args);
+
     ///brief templated constructor
-    template <typename IoType, typename ... Args>
-    IoStream(Args ... args);
+    template <typename IoType>
+    IoStream(std::unique_ptr<IoType>&& ioStream);
 
     IoStream() = default;
     ~IoStream() noexcept;
@@ -23,6 +27,9 @@ struct IoStream
     /// @param args arguments to a new i/o stream
     template<typename IoType, typename ... Args>
     void createAndOpen(Args ... args);
+
+    /// @brief tries to open i/o stream
+    void open();
 
     /// @brief tries to read data from an i/o stream up until a certain timeout expires
     /// @param ptr pointer to data to read from
@@ -45,13 +52,13 @@ struct IoStream
 
 private:
     std::unique_ptr<IoStreamBase> ioStreamBase;
-
 };
 
-template<typename IoType, typename... Args>
-IoStream::IoStream(Args ... args)
-: ioStreamBase{std::make_unique<IoType>(args...)}
-{ }
+template <typename IoType>
+IoStream::IoStream(std::unique_ptr<IoType>&& ioStream)
+: ioStreamBase{std::move(ioStream)}
+{
+}
 
 template<typename IoType, typename ... Args>
 void IoStream::createAndOpen(Args ... args)

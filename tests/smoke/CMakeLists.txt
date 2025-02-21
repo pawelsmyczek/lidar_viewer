@@ -9,7 +9,12 @@ add_executable(${NAME} SmokeTests.cxx)
 
 target_compile_definitions(${NAME} PRIVATE ABSOLUTE_PATH_TO_ASSETS="${PROJECT_SOURCE_DIR}/assets/")
 
-target_link_libraries(${NAME} GTest::GTest GTest::Main lidar_viewer_device lidar_viewer_ui)
+target_link_libraries(${NAME} GTest::GTest
+        GTest::Main
+        lidar_viewer_device
+        lidar_viewer_ui
+        lidar_viewer_ui_gl2
+)
 
 enable_testing()
 

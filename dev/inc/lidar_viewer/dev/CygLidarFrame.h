@@ -22,21 +22,16 @@ template < uint16_t s >
 class Frame
 {
 public:
-    enum class Status
-    {
-        OK = 0u,
-        BAD
-    };
     using Payload = std::array<uint8_t, s>;
     using Header = std::array<uint8_t, 3>;
 
     explicit constexpr Frame(Payload p_)
       : data{.repr{.payload_{p_}, .checksum_{checksum()}}},
-        status_{StatusOr::Status::OK} {}
+        status_{Status::OK} {}
 
-    explicit Frame(StatusOr::Status stat) : data{}, status_{stat} {}
+    explicit Frame(Status stat) : data{}, status_{stat} {}
 
-    constexpr Frame() noexcept : data{}, status_{StatusOr::Status::OK}
+    constexpr Frame() noexcept : data{}, status_{Status::OK}
     {}
 
     /// @returns pointer to the first element of the payload
@@ -52,7 +47,7 @@ public:
     { return data.raw.size(); }
 
     /// @returns frame status
-    [[nodiscard]] StatusOr::Status status() const noexcept
+    [[nodiscard]] Status status() const noexcept
     { return status_; }
 
     /// @returns pointer to the first element of a raw frame data
@@ -101,13 +96,13 @@ private:
         } __attribute__((packed)) repr{};
         std::array<uint8_t, sizeof(Repr)> raw;
     } data;
-    StatusOr::Status status_;
+    Status status_;
 };
 
 /// @brief read frame from a serial port
 /// @parameter serial reference to serial port
 template < class RespFrame > static inline
-StatusOr::StatusOr<RespFrame> read(IoStream& ioStream)
+StatusOr<RespFrame> read(IoStream& ioStream)
 {
     using namespace std::chrono_literals;
     RespFrame respFrame;
@@ -120,7 +115,7 @@ StatusOr::StatusOr<RespFrame> read(IoStream& ioStream)
         if (ioStream.read(&retHeader[0], expectedFrameHeader.size(), 130ms);
                 retHeader != expectedFrameHeader)
         {
-            return StatusOr::Status::BAD;
+            return Status::BAD;
         }
 
         auto readBytesInc = respFrame.header().size();
@@ -134,11 +129,11 @@ StatusOr::StatusOr<RespFrame> read(IoStream& ioStream)
             std::cerr << __func__ << ": " << readBytesInc
                         << " != " << sizeof(returnedSize) << " || "
                             << returnedSize <<" != " << respFrame.size() <<"\n";
-            return StatusOr::Status::BAD;
+            return Status::BAD;
         }
 
         rawResponse += readBytesInc;
-        ioStream.read(rawResponse, returnedSize - readBytesInc, 6ms);
+        ioStream.read(rawResponse, returnedSize + 1, 6ms);
         return respFrame;
     }
     catch (const std::exception& e)
@@ -153,7 +148,7 @@ StatusOr::StatusOr<RespFrame> read(IoStream& ioStream)
 /// @parameter serial reference to serial port
 /// @parameter respFrame reference to output frame
 template < class RespFrame > static inline
-StatusOr::Status read(IoStream& ioStream, RespFrame& respFrame)
+Status read(IoStream& ioStream, RespFrame& respFrame)
 {
     using namespace std::chrono_literals;
     using ExpectedHeader = typename std::remove_const<decltype(RespFrame{}.header())>::type;
@@ -167,7 +162,7 @@ StatusOr::Status read(IoStream& ioStream, RespFrame& respFrame)
         if (ioStream.read(&retHeader[0], expectedFrameHeader.size(), 130ms);
                 retHeader != expectedFrameHeader)
         {
-            return StatusOr::Status::BAD;
+            return Status::BAD;
         }
 
         auto readBytesInc = respFrame.header().size();
@@ -180,7 +175,7 @@ StatusOr::Status read(IoStream& ioStream, RespFrame& respFrame)
         {
             std::cerr << __func__ << ": " << readBytesInc
                       << " != " << sizeof(returnedSize) <<"\n";
-            return StatusOr::Status::BAD;
+            return Status::BAD;
         }
         if(returnedSize != respFrame.size())
         {
@@ -191,7 +186,7 @@ StatusOr::Status read(IoStream& ioStream, RespFrame& respFrame)
         }
 
         rawResponse += readBytesInc;
-        ioStream.read(rawResponse, returnedSize - readBytesInc, 6ms);
+        ioStream.read(rawResponse, returnedSize + 1, 6ms);
     }
     catch (const std::exception& e)
     {
@@ -199,7 +194,7 @@ StatusOr::Status read(IoStream& ioStream, RespFrame& respFrame)
 //        std::cerr << "Exception in frame read : " << e.what() << '\n';
         throw std::runtime_error{"Exception in frame read : \n"s + e.what()};
     }
-    return StatusOr::Status::OK;
+    return Status::OK;
 }
 
 /// @brief read frame from a serial port
@@ -246,7 +241,16 @@ void read(IoStream& ioStream, RespFrame* respFrame)
 template < uint16_t s > static inline
 void write(Frame<s>&& writeFrame, IoStream& ioStream)
 {
-    ioStream.write(writeFrame.raw(), sizeof(Frame<s>)-sizeof(typename Frame<s>::Status));
+    ioStream.write(writeFrame.raw(), writeFrame.rawSize());
+}
+
+/// @brief write frame to a serial port
+/// @parameter writeFrame frame to write
+/// @parameter serial reference to serial port
+template < uint16_t s > static inline
+void write(const Frame<s>& writeFrame, IoStream& ioStream)
+{
+    ioStream.write(writeFrame.raw(), writeFrame.rawSize());
 }
 
 } // namespace lidar_viewer::dev

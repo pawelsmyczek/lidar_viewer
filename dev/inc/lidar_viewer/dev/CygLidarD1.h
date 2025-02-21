@@ -17,6 +17,9 @@
 namespace lidar_viewer::dev
 {
 
+using Req2 = lidar_viewer::dev::Frame<2u>;
+using Req3 = lidar_viewer::dev::Frame<3u>;
+
 class CygLidarD1
 {
 public:
@@ -93,7 +96,12 @@ public:
     using PointCloud2D = std::array<uint16_t , 160u>;
 
     /// accessor function for 3d point cloud
-    using PointCloud3DAccessorFunction = std::function<void( const PointCloud3D& )>;
+    using PointCloud3DAccessorFunction = std::function<void( const PointCloud3D&)>;
+
+    /// accessor function for 3d point cloud
+    template <typename ...Args>
+    using PointCloud3DAccessorFunctionWithArgs = std::function<void( const PointCloud3D&, Args&... )>;
+
     /// accessor function for 3d point cloud
     using PointCloud2DAccessorFunction = std::function<void( const PointCloud2D& )>;
 
@@ -143,6 +151,19 @@ public:
     /// @param accessor3d function to access the 3d structure
     void use3dPointCloud(PointCloud3DAccessorFunction&& accessor3d) const;
 
+    /// uses the 3D point cloud without modifying it, atomic access
+    /// @param accessor3d function to access the 3d structure
+    template <typename ... Args>
+    void use3dPointCloudWithArgs(PointCloud3DAccessorFunctionWithArgs<Args&...> accessor3d, Args&... args) const
+    {
+        std::lock_guard lGuard{rwMutex};
+        if (!accessor3d)
+        {
+            return;
+        }
+        accessor3d(pointcloud3d, args...);
+    }
+
     /// uses the 2D point cloud without modifying it, atomic access
     /// @param accessor2d function to access the 2d structure
     void use2dPointCloud(PointCloud2DAccessorFunction&& accessor2d) const;
@@ -151,12 +172,6 @@ public:
     void readAndParse2dFrame();
 
     bool failedToRead() const;
-
-    void readFrame3d();
-    void readFrame2d();
-
-    void parse3dFrameToPointCloud(PointCloud3D& pointCloud, const Frame3D& frame) const;
-    void parse2dFrameToPointCloud(PointCloud2D& pointCloud, const Frame2D& frame) const;
 
     CygLidarD1(const CygLidarD1&) = delete;
     CygLidarD1& operator = (const CygLidarD1&) = delete;
@@ -173,13 +188,13 @@ private:
     {
         try
         {
-                const auto status = read(ioStream, returnedFrame);
-                if(status == StatusOr::Status::BAD)
-                {
-                    return ;
-                }
-                const auto returnedPayload = returnedFrame.payload();
-                parsingFunction(targetPointCloud, returnedPayload);
+            const auto status = read(ioStream, returnedFrame);
+            if(status == Status::BAD)
+            {
+                return ;
+            }
+            const auto returnedPayload = returnedFrame.payload();
+            parsingFunction(targetPointCloud, returnedPayload);
         }
         catch (std::exception const & e)
         {
@@ -197,114 +212,6 @@ private:
     std::atomic<bool> failureInRead;
     mutable std::mutex rwMutex;
     mutable std::mutex pcMutex;
-};
-
-template < class PointCloudProvider >
-class PointCloudReader
-{
-public:
-
-    explicit PointCloudReader(PointCloudProvider &lidar)
-    : lidar{lidar}
-    , stopThread{false}
-    , rxFuture{}
-    { }
-
-    ~PointCloudReader() noexcept
-    {
-        stop();
-    }
-
-    /// start measurement receival thread
-    void start(PointCloudProvider::Mode mode)
-    {
-        using namespace std::string_literals;
-        using namespace std::chrono_literals;
-        rxFuture = std::async([this, mode]()
-        {
-            try
-            {
-                for( ; !stopThread.load() ; )
-                {
-                    mode == CygLidarD1::Mode::Mode3D ? lidar.readAndParse3dFrame()
-                    : mode == CygLidarD1::Mode::Mode2D ? lidar.readAndParse2dFrame()
-                    : (void)mode; // TODO: dual mode
-                    std::this_thread::sleep_for(2ms);
-                }
-            }
-            catch (std::exception const & e)
-            {
-                //                stopThread.store(true);
-                std::stringstream sstream{};
-                std::cerr << "Exception in point cloud reader operation: \n"s << e.what() << '\n';
-//                throw std::runtime_error{sstream.str()};
-            }
-            catch (...)
-            {
-                std::cerr << "Unknown exception in point cloud reader operation\n";
-            }
-        });
-    }
-
-
-    /// stop measurement receival thread
-    void stop()
-    {
-        if ( stopThread.load() )
-        {
-            return ;
-        }
-        stopThread.store(true);
-        if (rxFuture.valid())
-        {
-            rxFuture.wait();
-        }
-    }
-
-
-    PointCloudReader(const PointCloudReader&) = delete;
-    PointCloudReader& operator = (const PointCloudReader&) = delete;
-    PointCloudReader(PointCloudReader&&) = delete;
-    PointCloudReader& operator = (PointCloudReader&&) = delete;
-
-private:
-
-    PointCloudProvider& lidar;
-    PointCloudProvider::PointCloud3D pointcloud3d;
-    PointCloudProvider::PointCloud2D pointcloud2d;
-
-    std::atomic<bool> stopThread;
-    std::future<void> rxFuture;
-};
-
-
-class FrameWriter
-{
-public:
-
-    /// @brief ctor
-    /// @param lidar reference to lidar
-    /// @param ioStream reference to ioStream
-    explicit FrameWriter(const CygLidarD1& lidar, IoStream& ioStream);
-    ~FrameWriter() noexcept;
-
-    /// start writer thread
-    void start();
-
-    /// stop measurement receival thread
-    void stop();
-
-    FrameWriter(const FrameWriter&) = delete;
-    FrameWriter& operator = (const FrameWriter&) = delete;
-    FrameWriter(FrameWriter&&) = delete;
-    FrameWriter& operator = (FrameWriter&&) = delete;
-
-private:
-
-    const CygLidarD1&   lidar;
-    IoStream&           ioStream;
-    std::atomic<bool>   stopThread;
-    std::future<void>   rxFuture;
 };
 
 } // namespace lidar_viewer::dev
