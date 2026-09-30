@@ -10,6 +10,8 @@ namespace lidar_viewer::geometry::types
 
 // schoolbook matrix implementation, there is room for improvements
 
+/// Base class of the matrices: non-owning view of a contiguous block of `size` elements
+/// with bounds-checked access.
 template <typename T>
 struct Matrix
 {
@@ -24,6 +26,8 @@ struct Matrix
     , size{N}
     { }
 
+    /// bounds-checked element access
+    /// @throws std::runtime_error when `id` is past the end
     reference get(size_t id) noexcept(false)
     {
         if(id >= size )
@@ -50,6 +54,8 @@ private:
 
 
 
+/// Matrix with dimensions known at compile time, stored in a std::array (M x N elements).
+/// Elements are accessed with `(x, y)`, where the element index is `y * N + x`.
 template <typename T, size_t M, size_t N>
 struct Static2DMatrix
         : public Matrix<T>
@@ -143,6 +149,8 @@ private:
     std::array<T, M*N> arr;
 };
 
+/// Matrix with dimensions chosen at run time, elements stored in a std::vector.
+/// Elements are accessed with `(x, y)`.
 template <typename T>
 struct DynamicMatrix
         : public Matrix<T>
@@ -224,6 +232,7 @@ struct DynamicMatrix
         return *this;
     }
 
+    /// dimensions of the matrix
     std::pair<size_t, size_t> resolution() const
     {
         std::make_pair(m, n);

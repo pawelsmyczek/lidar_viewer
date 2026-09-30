@@ -10,7 +10,14 @@
 namespace lidar_viewer::geometry::functions
 {
 
-/// returns a function which will later process an input depth image to convert it to point cloud
+/// Returns a function which will later process an input depth image to convert it to point cloud.
+/// Each pixel with depth inside `depthAtributes.depthRange` is mapped to the screen ranges, then turned
+/// into a 3D point using the field of view (spherical to euclidean conversion). Pixels outside of the
+/// depth range are skipped. Converted points are appended to the output point cloud.
+/// @note the returned function keeps references to both arguments, they must outlive it
+/// @tparam FrameType container of depth values (row-major, width * height elements) with `empty()`
+/// @param depthAtributes frame resolution, valid depth range and field of view
+/// @param screenRange target ranges the frame is mapped to
 template <typename FrameType>
 std::function<void(const FrameType &, types::PointCloud3D<float>& )>
 getDepthImageToPointCloudProcessor( const types::DepthFrameAttributes& depthAtributes, const types::ScreenRanges& screenRange)

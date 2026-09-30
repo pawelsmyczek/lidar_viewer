@@ -2,6 +2,7 @@
 #define LIDAR_VIEWER_DISPLAYPOINTCLOUD_H
 
 #include "lidar_viewer/ui/drawing/DrawingFunctions.h"
+#include "lidar_viewer/geometry/types/ScreenRanges.h"
 
 namespace lidar_viewer::dev
 {
@@ -13,7 +14,8 @@ class CygLidarD1;
 namespace lidar_viewer::ui
 {
 
-bool displayPointCloud3D(const dev::CygLidarD1* lidar, const lidar_viewer::ui::drawing::DrawPointColorFloatArr& ) noexcept;
+bool displayPointCloud3D(const dev::CygLidarD1* lidar, const lidar_viewer::geometry::types::ScreenRanges& screenRanges,
+                         const lidar_viewer::ui::drawing::DrawPointColorFloatArr& ) noexcept;
 
 bool displayPointCloud2D(const dev::CygLidarD1* lidar, lidar_viewer::ui::drawing::DrawPointColorFloatArr&& );
 

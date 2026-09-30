@@ -8,10 +8,14 @@
 namespace lidar_viewer::geometry::types
 {
 
+/// Axis aligned bounding box described by two opposite corners.
+/// @tparam PointT point type, see Point; must expose `Dim`, `value_type` and operator[]
 template <typename PointT>
 struct Box
 {
     using CoordType = PointT::value_type;
+    /// @param hi_ corner with the highest coordinate on every axis
+    /// @param lo_ corner with the lowest coordinate on every axis
     Box(const PointT& hi_, const PointT& lo_ )
     : hi{hi_}
     , lo{lo_}
@@ -22,6 +26,7 @@ struct Box
             , lo{std::move(lo_)}
     { }
 
+    /// Euclidean distance from `point` to the box, zero when the point is inside or on the border
     CoordType distance(const PointT& point) const
     {
         CoordType dd{};
@@ -39,14 +44,15 @@ struct Box
         return std::sqrt(dd);
     }
 
+    /// true if `point` lies inside the box (borders included)
     bool contains(const PointT& point) const
     {
         return distance(point) == CoordType{0};
     }
 
 // private:
-    PointT hi;
-    PointT lo;
+    PointT hi; ///< upper corner
+    PointT lo; ///< lower corner
 };
 
 } // namespace lidar_viewer::geometry::types

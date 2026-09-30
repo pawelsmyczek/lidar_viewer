@@ -6,6 +6,9 @@
 namespace lidar_viewer::geometry::types
 {
 
+/// Depth first iterator over the nodes of an octree. Dereferencing yields a pointer to the current node,
+/// the end iterator dereferences to nullptr.
+/// @tparam Octree octree type exposing `NodeType` and `getRootNode()`
 template <typename Octree>
 struct OctreeDfsIterator
 {
@@ -15,6 +18,7 @@ struct OctreeDfsIterator
         Node* node;
         size_t depth;
     };
+    /// constructs an iterator with an explicit state, used for the end iterator (state == nullptr)
     OctreeDfsIterator(Octree* octree_, size_t depth_, State* state_)
             : octree{octree_}
             , stack{}
@@ -22,6 +26,8 @@ struct OctreeDfsIterator
             , depth{depth_}
     { }
 
+    /// constructs an iterator pointing to the root node
+    /// @param depth_ depth of the octree, halved on every level descended
     OctreeDfsIterator(Octree* octree_, size_t depth_)
     : octree{octree_}
     , stack{}
@@ -38,6 +44,7 @@ struct OctreeDfsIterator
         state = &stack.top();
     }
 
+    /// iterators are equal when they belong to the same octree and are both exhausted
     bool operator==(const OctreeDfsIterator& other) const
     {
         if (this == &other) // same object
@@ -57,12 +64,14 @@ struct OctreeDfsIterator
         return !operator==(other);
     }
 
+    /// @return current node or nullptr for the end iterator
     Node* operator*() const
     {
         // return designated object
         return (octree && state) ? (state->node) : nullptr;
     }
 
+    /// advances to the next node, children of the current node are visited next
     OctreeDfsIterator& operator++()
     {
         impl();
