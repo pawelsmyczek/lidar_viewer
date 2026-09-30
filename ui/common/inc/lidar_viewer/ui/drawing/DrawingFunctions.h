@@ -1,12 +1,21 @@
 #ifndef LIDAR_VIEWER_DRAWINGFUNCTIONS_H
 #define LIDAR_VIEWER_DRAWINGFUNCTIONS_H
 
-#include "lidar_viewer/geometry/types/Box.h"
-#include "lidar_viewer/geometry/types/Point.h"
-
 #include <array>
 #include <functional>
 #include <string>
+
+namespace lidar_viewer::geometry::types
+{
+
+template <typename PointT>
+struct Box;
+template<typename CoordType, size_t Dimension>
+struct Point;
+template<typename CoordType>
+using  Point3D = Point<CoordType, 3>;
+
+}
 
 namespace lidar_viewer::ui::drawing
 {

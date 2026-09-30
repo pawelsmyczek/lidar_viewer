@@ -85,7 +85,7 @@ TEST(PointTest, DataMethod) {
 
 TEST(PointTest, DefaultConstructor)
 {
-    Point<int, 2> p;
+    Point<int, 2>{};
     // No direct check, but ensures default construction doesn't fail
 }
 

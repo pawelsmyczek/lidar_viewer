@@ -14,6 +14,8 @@ using FloatRange = Range<float>;
 
 struct ScreenRanges
 {
+    virtual ~ScreenRanges() = default;
+
     [[nodiscard]] virtual FloatRange fullRangeX() const = 0;
     [[nodiscard]] virtual FloatRange fullRangeY() const = 0;
     [[nodiscard]] virtual FloatRange fullRangeZ() const = 0;

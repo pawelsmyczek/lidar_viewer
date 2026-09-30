@@ -13,7 +13,7 @@ class CygLidarD1;
 namespace lidar_viewer::ui
 {
 
-bool displayFlatDepthImage(const dev::CygLidarD1* lidar, const lidar_viewer::ui::drawing::DrawPointColorByteArr& );
+bool displayFlatDepthImage(const dev::CygLidarD1* lidar, const lidar_viewer::ui::drawing::DrawPointColorByteArr& func);
 
 } // namespace lidar_viewer::ui
 

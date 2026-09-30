@@ -23,7 +23,8 @@ add_executable(${NAME}
         geometry/UtilitiesTest.cxx
         geometry/ScreenRangesTest.cxx
         ui/ViewerTest.cxx
-        ui/DisplayManagerTest.cxx)
+        ui/DisplayManagerTest.cxx
+        ui/DisplayFlatDepthImageTest.cxx)
 
 target_link_libraries(${NAME}
         GTest::GTest
