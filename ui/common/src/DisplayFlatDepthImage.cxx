@@ -2,7 +2,6 @@
 
 #include "lidar_viewer/geometry/types/Point.h"
 #include "lidar_viewer/dev/CygLidarD1.h"
-#include "lidar_viewer/geometry/types/Point.h"
 #include "lidar_viewer/geometry/types/DepthFrameAttributes.h"
 #include "lidar_viewer/geometry/types/ScreenRanges.h"
 #include "lidar_viewer/geometry/functions/Utilities.h"

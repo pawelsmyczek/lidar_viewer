@@ -149,7 +149,7 @@ public:
 
     /// uses the 3D point cloud without modifying it, atomic access
     /// @param accessor3d function to access the 3d structure
-    void use3dPointCloud(PointCloud3DAccessorFunction&& accessor3d) const;
+    virtual void use3dPointCloud(PointCloud3DAccessorFunction&& accessor3d) const;
 
     /// uses the 3D point cloud without modifying it, atomic access
     /// @param accessor3d function to access the 3d structure
@@ -171,7 +171,7 @@ public:
     void readAndParse3dFrame();
     void readAndParse2dFrame();
 
-    bool failedToRead() const;
+    virtual bool failedToRead() const;
 
     CygLidarD1(const CygLidarD1&) = delete;
     CygLidarD1& operator = (const CygLidarD1&) = delete;
@@ -179,7 +179,7 @@ public:
     CygLidarD1& operator = (CygLidarD1&&) = delete;
 
     /// dtor, disables communication with lidar
-    ~CygLidarD1() noexcept;
+    virtual ~CygLidarD1() noexcept;
 
 private:
 

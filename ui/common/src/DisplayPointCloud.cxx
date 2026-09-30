@@ -1,6 +1,6 @@
 #include "lidar_viewer/ui/display/DisplayPointCloud.h"
-#include "lidar_viewer/dev/CygLidarD1.h"
 
+#include "lidar_viewer/dev/CygLidarD1.h"
 #include "lidar_viewer/geometry/types/Point.h"
 #include "lidar_viewer/geometry/types/DepthFrameAttributes.h"
 #include "lidar_viewer/geometry/types/ScreenRanges.h"
@@ -13,7 +13,7 @@ using MapGlFloat3 = std::array<float, 3>;
 namespace lidar_viewer::ui
 {
 
-bool displayPointCloud3D(const dev::CygLidarD1* lidar, lidar_viewer::ui::drawing::DrawPointColorFloatArr && drawPoint) noexcept
+bool displayPointCloud3D(const dev::CygLidarD1* lidar, const lidar_viewer::ui::drawing::DrawPointColorFloatArr & drawPoint) noexcept
 {
     using geometry::types::PointCloud3D;
     using geometry::functions::calculateBoundingBoxFromPointCloud;
@@ -42,9 +42,9 @@ bool displayPointCloud3D(const dev::CygLidarD1* lidar, lidar_viewer::ui::drawing
     for(auto point : pointCloudV)
     {
         MapGlFloat3 rgbValues{
-                point[2] < .5f ? 2 * point[2] : 2 - 2 * point[2], // g
-                point[2] < .5f ? 1 - 2 * point[2] : .0f, // r
-                point[2] < .5f ? .0f : 2 * point[2] - 1 // b
+                point[2] < .5f ? 2 * point[2] : 2 - 2 * point[2],   // g
+                point[2] < .5f ? 1 - 2 * point[2] : .0f,            // r
+                point[2] < .5f ? .0f : 2 * point[2] - 1             // b
         };
         drawPoint(point, rgbValues);
     }

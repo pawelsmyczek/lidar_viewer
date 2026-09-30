@@ -13,7 +13,7 @@ class CygLidarD1;
 namespace lidar_viewer::ui
 {
 
-bool displayPointCloud3D(const dev::CygLidarD1* lidar, lidar_viewer::ui::drawing::DrawPointColorFloatArr&& ) noexcept;
+bool displayPointCloud3D(const dev::CygLidarD1* lidar, const lidar_viewer::ui::drawing::DrawPointColorFloatArr& ) noexcept;
 
 bool displayPointCloud2D(const dev::CygLidarD1* lidar, lidar_viewer::ui::drawing::DrawPointColorFloatArr&& );
 

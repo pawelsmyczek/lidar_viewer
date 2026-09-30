@@ -20,13 +20,14 @@
 #include <unistd.h>
 #include <csignal>
 #include <termios.h>
+#include <stack>
 
 namespace
 {
 
 std::function<void(int)> handleSignal;
 
-void signalHandler(int sigNum)
+void signalHandler(int const sigNum)
 {
     if(!handleSignal)
     {
@@ -229,7 +230,7 @@ int main(int argc, char** argv)
         }
 
         handleSignal = [&]
-        (int sigNum)
+        (int const sigNum)
         {
             std::cout << "Received signal : " << sigNum << ", trying to stop all resources\n";
             viewer.stop();
