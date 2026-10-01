@@ -1,4 +1,5 @@
-#include "lidar_viewer/geometry/types/Matrix.h"
+#include "lidar_viewer/geometry/types/DynamicMatrix.h"
+#include "lidar_viewer/geometry/types/Static2DMatrix.h"
 
 #include <gtest/gtest.h>
 

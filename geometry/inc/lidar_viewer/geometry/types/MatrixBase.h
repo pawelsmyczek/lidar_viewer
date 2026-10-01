@@ -1,15 +1,12 @@
-#ifndef LIDAR_VIEWER_MATRIX_H
-#define LIDAR_VIEWER_MATRIX_H
+#ifndef LIDAR_VIEWER_MATRIXBASE_H
+#define LIDAR_VIEWER_MATRIXBASE_H
 
 #include <algorithm>
-#include <array>
 #include <cstddef>
 #include <functional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
-#include <utility>
-#include <vector>
 
 namespace lidar_viewer::geometry::types
 {
@@ -246,162 +243,6 @@ void identity(Out& out)
 
 } // namespace detail
 
-/// Zero initialised matrix with M rows and N columns known at compile time.
-/// @tparam T type of a single element, e.g. double
-/// @tparam M number of rows
-/// @tparam N number of columns
-template <typename T, size_t M, size_t N>
-struct Static2DMatrix
-        : public MatrixBase<Static2DMatrix<T, M, N>, T>
-{
-    /// creates a matrix with all elements equal to zero
-    Static2DMatrix() = default;
-
-    /// number of rows, `M`
-    static constexpr size_t rows()
-    {
-        return M;
-    }
-
-    /// number of columns, `N`
-    static constexpr size_t cols()
-    {
-        return N;
-    }
-
-    /// pointer to the first element, the `M * N` elements are stored contiguously, row by row
-    T* data()
-    {
-        return arr.data();
-    }
-
-    /// @copydoc data()
-    const T* data() const
-    {
-        return arr.data();
-    }
-
-    /// Matrix product: (M x N) * (N x P) gives (M x P). The inner dimensions are checked at
-    /// compile time.
-    /// @tparam P number of columns of `rhs` and of the result
-    /// @param rhs right operand
-    /// @return new matrix, the operands are not modified
-    template <size_t P>
-    Static2DMatrix<T, M, P> operator * (const Static2DMatrix<T, N, P>& rhs) const
-    {
-        Static2DMatrix<T, M, P> tmp;
-        detail::multiplyAccumulate(*this, rhs, tmp);
-        return tmp;
-    }
-
-    /// Transpose: rows become columns, (M x N) gives (N x M). The matrix is not modified.
-    /// @return new matrix with `result(y, x) == (*this)(x, y)`
-    Static2DMatrix<T, N, M> transpose() const
-    {
-        Static2DMatrix<T, N, M> out;
-        detail::transposeInto(*this, out);
-        return out;
-    }
-
-    /// Identity matrix: ones on the diagonal, zeros elsewhere. Only available for square matrices,
-    /// a non-square one fails to compile.
-    static Static2DMatrix<T, N, M> identity()
-    {
-        Static2DMatrix<T, N, M> tmp{};
-        static_assert(N == M, "identity can be performed only on a square matrix");
-        detail::identity(tmp);
-        return tmp;
-    }
-
-private:
-    std::array<T, M * N> arr{};
-};
-
-/// Zero initialised matrix with dimensions chosen at run time.
-/// @note a moved-from matrix keeps its dimensions but has no elements: only assign to it or
-///       destroy it
-/// @tparam T type of a single element, e.g. double
-template <typename T>
-struct DynamicMatrix
-        : public MatrixBase<DynamicMatrix<T>, T>
-{
-    /// creates a matrix with all elements equal to zero
-    /// @param rows number of rows
-    /// @param cols number of columns
-    DynamicMatrix(size_t rows, size_t cols)
-    : arr(rows * cols)
-    , m{rows}
-    , n{cols}
-    {}
-
-    /// number of rows
-    [[nodiscard]] size_t rows() const
-    {
-        return m;
-    }
-
-    /// number of columns
-    [[nodiscard]] size_t cols() const
-    {
-        return n;
-    }
-
-    /// pointer to the first element, the elements are stored contiguously, row by row
-    T* data()
-    {
-        return arr.data();
-    }
-
-    /// @copydoc data()
-    const T* data() const
-    {
-        return arr.data();
-    }
-
-    /// dimensions of the matrix: (rows, columns)
-    [[nodiscard]] std::pair<size_t, size_t> resolution() const
-    {
-        return std::make_pair(m, n);
-    }
-
-    /// Matrix product: (M x N) * (N x P) gives (M x P).
-    /// @param rhs right operand, its number of rows must equal the number of columns of this matrix
-    /// @return new matrix, the operands are not modified
-    /// @throws std::runtime_error when the number of columns differs from the rhs number of rows
-    DynamicMatrix operator * (const DynamicMatrix& rhs) const
-    {
-        if (n != rhs.m)
-        {
-            throw std::runtime_error{"Matrix dimensions do not match"};
-        }
-        DynamicMatrix tmp{m, rhs.n};
-        detail::multiplyAccumulate(*this, rhs, tmp);
-        return tmp;
-    }
-
-    /// Transpose: rows become columns, (M x N) gives (N x M). The matrix is not modified.
-    /// @return new matrix with `result(y, x) == (*this)(x, y)` and the dimensions swapped
-    DynamicMatrix transpose() const
-    {
-        DynamicMatrix out{cols(), rows()};
-        detail::transposeInto(*this, out);
-        return out;
-    }
-
-    /// Identity matrix: ones on the diagonal, zeros elsewhere.
-    /// @param n number of rows and columns
-    static DynamicMatrix identity(const size_t n)
-    {
-        DynamicMatrix tmp{n, n};
-        detail::identity(tmp);
-        return tmp;
-    }
-
-private:
-    std::vector<T> arr;
-    size_t m, n;
-};
-
 } // namespace lidar_viewer::geometry::types
 
-#endif //LIDAR_VIEWER_MATRIX_H
+#endif //LIDAR_VIEWER_MATRIXBASE_H
