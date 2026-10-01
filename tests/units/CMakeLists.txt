@@ -16,6 +16,7 @@ add_executable(${NAME}
         geometry/BoxTest.cxx
         geometry/DownSampleTest.cxx
         geometry/GetDepthImageToPointCloudProcessorTest.cxx
+        geometry/MatrixTest.cxx
         geometry/OctreeTest.cxx
         geometry/OctreeFromPointCloudTest.cxx
         geometry/OctreeIteratorTest.cxx
