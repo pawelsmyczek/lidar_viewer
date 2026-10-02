@@ -11,6 +11,11 @@
 namespace lidar_viewer::geometry::functions
 {
 
+/// Voxel grid down sampling: the bounding box of the cloud is split into cubes of `voxelSize`
+/// and every non-empty cube is replaced by the mean of the points it contains.
+/// @param pointCloud cloud to reduce
+/// @param voxelSize edge length of a voxel, in the units of the coordinates
+/// @return down sampled cloud, empty when the input has fewer than 7 points
 template <typename CoordType>
 types::PointCloud3D<CoordType> downSample(const types::PointCloud3D<CoordType>& pointCloud, float voxelSize)
 {

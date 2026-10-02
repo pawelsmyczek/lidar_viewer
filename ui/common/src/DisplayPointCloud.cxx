@@ -13,7 +13,8 @@ using MapGlFloat3 = std::array<float, 3>;
 namespace lidar_viewer::ui
 {
 
-bool displayPointCloud3D(const dev::CygLidarD1* lidar, const lidar_viewer::ui::drawing::DrawPointColorFloatArr & drawPoint) noexcept
+bool displayPointCloud3D(const dev::CygLidarD1* lidar, const geometry::types::ScreenRanges& screenRanges,
+                         const lidar_viewer::ui::drawing::DrawPointColorFloatArr & drawPoint) noexcept
 {
     using geometry::types::PointCloud3D;
     using geometry::functions::calculateBoundingBoxFromPointCloud;
@@ -33,9 +34,7 @@ bool displayPointCloud3D(const dev::CygLidarD1* lidar, const lidar_viewer::ui::d
     constexpr geometry::types::DepthFrameAttributes depthFrameAttributes{dev::CygLidarD1::get3dFrameWindow(),
                                                                          depthRange, 60.f, 32.5f};
 
-    geometry::types::ScreenRangeGl glScreenRange{};
-
-    auto conversionFunction = getDepthImageToPointCloudProcessor<DepthImage3D>(depthFrameAttributes, glScreenRange);
+    auto conversionFunction = getDepthImageToPointCloudProcessor<DepthImage3D>(depthFrameAttributes, screenRanges);
     PointCloud3D<float> pointCloudV;
     lidar->use3dPointCloudWithArgs(conversionFunction, pointCloudV);
 

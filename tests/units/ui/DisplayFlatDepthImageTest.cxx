@@ -52,7 +52,7 @@ TEST(DisplayFlatDepthImageTest, ReturnsFalseIfLidarIsNull)
 {
     MockDrawPoint drawPoint{};
     const auto ptr = nullptr;
-    EXPECT_FALSE(ui::displayFlatDepthImage(ptr, std::cref(drawPoint)));
+    EXPECT_FALSE(ui::displayFlatDepthImage(ptr, geometry::types::ScreenRangeGl{}, std::cref(drawPoint)));
 }
 
 TEST(DisplayFlatDepthImageTest, ReturnsFalseIfLidarFailsToRead)
@@ -64,7 +64,7 @@ TEST(DisplayFlatDepthImageTest, ReturnsFalseIfLidarFailsToRead)
 
     EXPECT_CALL(mockLidar, failedToRead()).WillOnce(Return(true));
 
-    EXPECT_FALSE(ui::displayFlatDepthImage(&mockLidar, std::cref(drawPoint)));
+    EXPECT_FALSE(ui::displayFlatDepthImage(&mockLidar, geometry::types::ScreenRangeGl{}, std::cref(drawPoint)));
 }
 
 TEST(DisplayFlatDepthImageTest, ProcessesValidPointCloud)
@@ -85,7 +85,7 @@ TEST(DisplayFlatDepthImageTest, ProcessesValidPointCloud)
 
     EXPECT_CALL(drawPoint, operatorCall(_, _)).Times(::testing::AtLeast(1));
 
-    EXPECT_TRUE(ui::displayFlatDepthImage(&mockLidar, std::cref(drawPoint)));
+    EXPECT_TRUE(ui::displayFlatDepthImage(&mockLidar, geometry::types::ScreenRangeGl{}, std::cref(drawPoint)));
 }
 
 TEST(DisplayFlatDepthImageTest, SkipsInvalidDepthValues)
@@ -106,7 +106,7 @@ TEST(DisplayFlatDepthImageTest, SkipsInvalidDepthValues)
 
     EXPECT_CALL(drawPoint, operatorCall(_, _)).Times(0); // No calls expected
 
-    EXPECT_TRUE(ui::displayFlatDepthImage(&mockLidar, std::cref(drawPoint)));
+    EXPECT_TRUE(ui::displayFlatDepthImage(&mockLidar, geometry::types::ScreenRangeGl{}, std::cref(drawPoint)));
 }
 } // namespace lidar_viewer::tests::units
 

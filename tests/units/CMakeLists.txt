@@ -16,12 +16,16 @@ add_executable(${NAME}
         geometry/BoxTest.cxx
         geometry/DownSampleTest.cxx
         geometry/GetDepthImageToPointCloudProcessorTest.cxx
+        geometry/MatrixTest.cxx
         geometry/OctreeTest.cxx
         geometry/OctreeFromPointCloudTest.cxx
         geometry/OctreeIteratorTest.cxx
         geometry/PointTest.cxx
         geometry/UtilitiesTest.cxx
+        geometry/VectorTest.cxx
         geometry/ScreenRangesTest.cxx
+        geometry/Transform3DTest.cxx
+        geometry/TransformPointCloudTest.cxx
         ui/ViewerTest.cxx
         ui/DisplayManagerTest.cxx
         ui/DisplayFlatDepthImageTest.cxx)

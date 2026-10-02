@@ -11,7 +11,8 @@ namespace lidar_viewer::ui
 using MapGlFloat3 = std::array<float, 3>;
 using MapGlUByte3 = std::array<uint8_t , 3>;
 
-bool displayFlatDepthImage(const dev::CygLidarD1* lidar, const lidar_viewer::ui::drawing::DrawPointColorByteArr& drawPoint)
+bool displayFlatDepthImage(const dev::CygLidarD1* lidar, const geometry::types::ScreenRanges& screenRanges,
+                           const lidar_viewer::ui::drawing::DrawPointColorByteArr& drawPoint)
 {
     using geometry::functions::valueToRGBByte;
     using geometry::functions::mapValue;
@@ -30,12 +31,12 @@ bool displayFlatDepthImage(const dev::CygLidarD1* lidar, const lidar_viewer::ui:
     constexpr geometry::types::DepthFrameAttributes depthFrameAttributes{dev::CygLidarD1::get3dFrameWindow(),
                                                                          depthRange, 60.f, 32.5f};
 
-    constexpr std::pair<float, float> glFullScreenRangeX    {-1.f, 1.f};
-    constexpr auto bUpperNormGlFullScreenRangeX = glFullScreenRangeX.second - glFullScreenRangeX.first;
-    constexpr std::pair<float, float> glFullScreenRangeY    {1.f, -1.f};
-    constexpr auto bUpperNormGlFullScreenRangeY = glFullScreenRangeY.second - glFullScreenRangeY.first;
-    constexpr std::pair<float, float> glFullScreenRangeZ    {1.f, .0f};
-    constexpr auto bUpperNormGlFullScreenRangeZ = glFullScreenRangeZ.second - glFullScreenRangeZ.first;
+    const auto glFullScreenRangeX = screenRanges.fullRangeX();
+    const auto bUpperNormGlFullScreenRangeX = glFullScreenRangeX.second - glFullScreenRangeX.first;
+    const auto glFullScreenRangeY = screenRanges.fullRangeY();
+    const auto bUpperNormGlFullScreenRangeY = glFullScreenRangeY.second - glFullScreenRangeY.first;
+    const auto glFullScreenRangeZ = screenRanges.fullRangeZ();
+    const auto bUpperNormGlFullScreenRangeZ = glFullScreenRangeZ.second - glFullScreenRangeZ.first;
 
     constexpr std::pair<float, float> glRangeX              {.0f, static_cast<float>(depthFrameAttributes.frameResolution.first)};
     constexpr auto aUpperNormGlFullScreenRangeX = glRangeX.second - glRangeX.first;
@@ -45,9 +46,9 @@ bool displayFlatDepthImage(const dev::CygLidarD1* lidar, const lidar_viewer::ui:
                                                                  static_cast<float>(depthRange.second)};
     constexpr auto aUpperNormGlFullScreenRangeZ = glRangeZ.second - glRangeZ.first;
 
-    constexpr auto xUpperNormScalar = bUpperNormGlFullScreenRangeX / aUpperNormGlFullScreenRangeX;
-    constexpr auto yUpperNormScalar = bUpperNormGlFullScreenRangeY / aUpperNormGlFullScreenRangeY;
-    constexpr auto zUpperNormScalar = bUpperNormGlFullScreenRangeZ / aUpperNormGlFullScreenRangeZ;
+    const auto xUpperNormScalar = bUpperNormGlFullScreenRangeX / aUpperNormGlFullScreenRangeX;
+    const auto yUpperNormScalar = bUpperNormGlFullScreenRangeY / aUpperNormGlFullScreenRangeY;
+    const auto zUpperNormScalar = bUpperNormGlFullScreenRangeZ / aUpperNormGlFullScreenRangeZ;
 
     constexpr auto gScalar = ( depthRange.second - 1u ) * 255u;
     constexpr auto rScalar = ( ( depthRange.second / 2u ) - 1u ) * 255u;

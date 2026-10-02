@@ -78,14 +78,17 @@ TEST(SmokeTestLidarViewer, SmokeTestLidarViewer3DMode) {
         auto commandsTestingThread = std::async(std::launch::async, executeBasicViewManipulationKeyPresses);
         std::cout << "Opening viewer\n";
         ViewManagerGl window{viewerGlCfg};
+        lidar_viewer::geometry::types::ScreenRangeGl glScreenRange{};
         DisplayManagerGl displayManagerGl{window, std::chrono::milliseconds{16}};
         displayManagerGl.registerDisplayFunction(DisplayManagerBase::ViewType::Flat, displayFlatDepthImage, &lidar
+                , std::cref(glScreenRange)
                 , drawing::drawPointByteColored<float>);
         displayManagerGl.registerDisplayFunction(DisplayManagerBase::ViewType::PointCloud, displayPointCloud3D, &lidar
+                , std::cref(glScreenRange)
                 , drawing::drawPoint<float>);
         displayManagerGl.registerDisplayFunction(DisplayManagerBase::ViewType::Octree,
                                                  display::displayOctreeFromPointCloud,
-                                                 &lidar, drawing::drawCube<float>, drawing::drawPoint<float>);
+                                                 &lidar, std::cref(glScreenRange), drawing::drawCube<float>, drawing::drawPoint<float>);
         displayManagerGl.registerDisplayFunction(DisplayManagerBase::ViewType::Statistics, display::displayStatistics,
                                                  drawing::drawStdStringFloatPos, getScreenParameters);
         window.start(&argc, argv);

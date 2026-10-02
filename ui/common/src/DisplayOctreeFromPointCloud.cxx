@@ -17,7 +17,8 @@ using MapGlFloat3 = std::array<float , 3>;
 template <typename CoordType>
 using Box3D = lidar_viewer::geometry::types::Box<lidar_viewer::geometry::types::Point3D<CoordType>>;
 
-bool displayOctreeFromPointCloud(const dev::CygLidarD1* lidar, lidar_viewer::ui::drawing::DrawCubeColorFloatArr drawCube
+bool displayOctreeFromPointCloud(const dev::CygLidarD1* lidar, const geometry::types::ScreenRanges& screenRanges
+                                                                , lidar_viewer::ui::drawing::DrawCubeColorFloatArr drawCube
                                                                 , lidar_viewer::ui::drawing::DrawPointColorFloatArr drawPoint)
 {
     using geometry::types::PointCloud3D;
@@ -40,9 +41,7 @@ bool displayOctreeFromPointCloud(const dev::CygLidarD1* lidar, lidar_viewer::ui:
     constexpr geometry::types::DepthFrameAttributes depthFrameAttributes{dev::CygLidarD1::get3dFrameWindow(),
                                                         depthRange, 60.f, 32.5f};
 
-    geometry::types::ScreenRangeGl glScreenRange{};
-
-    auto conversionFunction = getDepthImageToPointCloudProcessor<DepthImage3D>(depthFrameAttributes, glScreenRange);
+    auto conversionFunction = getDepthImageToPointCloudProcessor<DepthImage3D>(depthFrameAttributes, screenRanges);
     PointCloud3D<float> pointCloudV;
     lidar->use3dPointCloudWithArgs(conversionFunction, pointCloudV);
 

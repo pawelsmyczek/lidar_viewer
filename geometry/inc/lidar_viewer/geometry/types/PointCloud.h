@@ -12,6 +12,7 @@ namespace lidar_viewer::geometry::types
 template <typename PointType>
 using PointCloud = std::vector<PointType>;
 
+/// point cloud of three dimensional points
 template <typename CoordType>
 using PointCloud3D = PointCloud<Point3D<CoordType>>;
 
