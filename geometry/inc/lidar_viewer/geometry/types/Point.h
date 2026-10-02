@@ -2,11 +2,12 @@
 #define LIDAR_VIEWER_POINT_H
 
 #include <array>
+#include <utility>
 
 namespace lidar_viewer::geometry::types
 {
 
-/// Fixed-size point (or vector) with `Dimension` coordinates of type `CoordType`.
+/// Fixed-size point with `Dimension` coordinates of type `CoordType`.
 /// Thin wrapper around std::array offering element access and basic arithmetic.
 /// @tparam CoordType type of a single coordinate, e.g. float
 /// @tparam Dimension number of coordinates
@@ -24,88 +25,109 @@ struct Point
 
 
     /// constructs the point from an array of coordinates
-    explicit Point(const std::array<CoordType, Dimension>& il)
+    constexpr explicit Point(const std::array<CoordType, Dimension>& il)
     : x{il}
     {}
 
+    /// default constructed point has initialised coordinates
+    constexpr Point()
+        : x{}
+    {
+    }
+
+    /// converts a point with another coordinate type, every coordinate is cast with static_cast
+    /// (a same-type copy still uses the copy constructor)
+    template <typename U>
+    constexpr explicit Point(const Point<U, Dimension>& other)
+        : Point{other, std::make_index_sequence<Dimension>{}}
+    {}
+
     /// unchecked coordinate access, `id` must be lower than Dim
-    const_reference operator [] (size_t id) const
+    constexpr const_reference operator [] (size_t id) const
     {
         return x[id];
     }
 
-    reference operator [] (size_t id)
+    constexpr reference operator [] (size_t id)
     {
         return x[id];
     }
 
     /// coordinate access by value (unchecked, like operator[])
-    value_type at(size_t id)
+    constexpr value_type at(size_t id)
     {
         return x[id];
     }
 
-    value_type at(size_t id) const
+    constexpr value_type at(size_t id) const
     {
         return x[id];
     }
 
     /// pointer to the first coordinate, coordinates are stored contiguously
-    const_pointer data () const
+    constexpr const_pointer data () const
     {
         return x.data();
     }
 
     /// coordinate-wise sum, returns a new point
-    Point<CoordType, Dimension> operator + (const Point<CoordType, Dimension>& rhs)
+    constexpr Point<CoordType, Dimension> operator + (const Point<CoordType, Dimension>& rhs) const
     {
-        Point<CoordType, Dimension> tmp;
-        for (size_t i = 0; i < Dimension; ++i)
-        {
-            tmp[i] = x[i] + rhs[i];
-        }
+        Point<CoordType, Dimension> tmp{*this};
+        tmp += rhs;
         return tmp;
     }
 
     /// coordinate-wise difference, returns a new point
-    Point<CoordType, Dimension> operator - (const Point<CoordType, Dimension>& rhs)
+    constexpr Point<CoordType, Dimension> operator - (const Point<CoordType, Dimension>& rhs) const
     {
-        Point<CoordType, Dimension> tmp;
-        for (size_t i = 0; i < Dimension; ++i)
-        {
-            tmp[i] = x[i] - rhs[i];
-        }
+        Point<CoordType, Dimension> tmp{*this};
+        tmp -= rhs;
         return tmp;
     }
 
     /// adds `rhs` coordinate-wise to this point in place
-    Point<CoordType, Dimension>& operator += (const Point<CoordType, Dimension>& rhs)
+    constexpr Point<CoordType, Dimension>& operator += (const Point<CoordType, Dimension>& rhs)
     {
-        for (size_t i = 0; i < Dimension; ++i)
+        [this, &rhs]<size_t... Is>(std::index_sequence<Is...>)
         {
-            x[i] += rhs[i];
-        }
+            ((x[Is] += rhs[Is]), ...);
+        }(std::make_index_sequence<Dimension>{});
+        return *this;
+    }
+
+    /// subtracts `rhs` coordinate-wise from this point in place
+    constexpr Point<CoordType, Dimension>& operator -= (const Point<CoordType, Dimension>& rhs)
+    {
+        [this, &rhs]<size_t... Is>(std::index_sequence<Is...>)
+        {
+            ((x[Is] -= rhs[Is]), ...);
+        }(std::make_index_sequence<Dimension>{});
         return *this;
     }
 
     /// divides every coordinate by `rhs` **in place** and returns a reference to this point,
     /// so, despite the operator, the receiver is modified (`rhs` must not be zero)
-    Point<CoordType, Dimension>& operator / (size_t rhs)
+    constexpr Point<CoordType, Dimension>& operator / (size_t rhs)
     {
-        for (size_t i = 0; i < Dimension; ++i)
+        [this, rhs]<size_t... Is>(std::index_sequence<Is...>)
         {
-            x[i] /= rhs;
-        }
+            ((x[Is] /= rhs), ...);
+        }(std::make_index_sequence<Dimension>{});
         return *this;
     }
 
-    /// default constructed point has uninitialised coordinates
-    Point() = default;
     Point(const Point& ) = default;
     Point& operator = (const Point& ) = default;
     Point(Point&& ) = default;
     Point& operator = (Point&& ) = default;
 private:
+    /// expands the indices, so that all the coordinates are cast in one braced initialisation
+    template <typename U, size_t... Is>
+    constexpr Point(const Point<U, Dimension>& other, std::index_sequence<Is...>)
+        : x{static_cast<CoordType>(other[Is])...}
+    {}
+
     std::array<CoordType, Dimension> x;
 };
 
@@ -116,7 +138,6 @@ using Point3D = Point<CoordType, 3>;
 /// two dimensional point
 template <typename CoordType>
 using Point2D = Point<CoordType, 2>;
-
 
 } // namespace lidar_viewer::geometry::types
 

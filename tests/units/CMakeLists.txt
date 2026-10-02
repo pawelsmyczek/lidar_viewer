@@ -22,7 +22,10 @@ add_executable(${NAME}
         geometry/OctreeIteratorTest.cxx
         geometry/PointTest.cxx
         geometry/UtilitiesTest.cxx
+        geometry/VectorTest.cxx
         geometry/ScreenRangesTest.cxx
+        geometry/Transform3DTest.cxx
+        geometry/TransformPointCloudTest.cxx
         ui/ViewerTest.cxx
         ui/DisplayManagerTest.cxx
         ui/DisplayFlatDepthImageTest.cxx)
