@@ -1,7 +1,7 @@
 #ifndef LIDAR_VIEWER_DRAWCUBE_H
 #define LIDAR_VIEWER_DRAWCUBE_H
 
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 #include "lidar_viewer/geometry/types/Box.h"
 
 #include <array>
@@ -11,7 +11,7 @@ namespace lidar_viewer::ui::drawing
 {
 
 template <typename CoordType>
-using Box3D = lidar_viewer::geometry::types::Box<lidar_viewer::geometry::types::Point3D<CoordType>>;
+using Box3D = lidar_viewer::geometry::types::Box<lidar_viewer::linalg::Point3D<CoordType>>;
 
 template <typename CoordType>
 void drawCube(const Box3D<CoordType>& box, const std::array<float, 3>& color)

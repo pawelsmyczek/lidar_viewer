@@ -1,7 +1,7 @@
 #include "lidar_viewer/ui/display/DisplayOctreeFromPointCloud.h"
 #include "lidar_viewer/dev/CygLidarD1.h"
 
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 #include "lidar_viewer/geometry/types/Box.h"
 #include "lidar_viewer/geometry/types/PointCloud.h"
 #include "lidar_viewer/geometry/types/OctreeFromPointCloud.h"
@@ -15,7 +15,7 @@ namespace lidar_viewer::ui::display
 using MapGlFloat3 = std::array<float , 3>;
 
 template <typename CoordType>
-using Box3D = lidar_viewer::geometry::types::Box<lidar_viewer::geometry::types::Point3D<CoordType>>;
+using Box3D = lidar_viewer::geometry::types::Box<lidar_viewer::linalg::Point3D<CoordType>>;
 
 bool displayOctreeFromPointCloud(const dev::CygLidarD1* lidar, const geometry::types::ScreenRanges& screenRanges
                                                                 , lidar_viewer::ui::drawing::DrawCubeColorFloatArr drawCube

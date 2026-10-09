@@ -1,6 +1,6 @@
 #include "lidar_viewer/ui/display/DisplayFlatDepthImage.h"
 
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 #include "lidar_viewer/dev/CygLidarD1.h"
 #include "lidar_viewer/geometry/types/DepthFrameAttributes.h"
 #include "lidar_viewer/geometry/types/ScreenRanges.h"
@@ -72,7 +72,7 @@ bool displayFlatDepthImage(const dev::CygLidarD1* lidar, const geometry::types::
                     valueToRGBByte<uint8_t>(bScalar, elementOfFrame)
             };
 
-            geometry::types::Point3D<float> point{{
+            linalg::Point3D<float> point{{
                   mapValue(glRangeX.first, glFullScreenRangeX.first,
                            xUpperNormScalar, static_cast<float>(x)),
                   mapValue(glRangeY.first, glFullScreenRangeY.first,

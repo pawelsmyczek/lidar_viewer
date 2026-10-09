@@ -1,5 +1,5 @@
-#include "lidar_viewer/geometry/types/Point.h"
-#include "lidar_viewer/geometry/types/Vector.h"
+#include "lidar_viewer/linalg/Point.h"
+#include "lidar_viewer/linalg/Vector.h"
 
 #include <gtest/gtest.h>
 
@@ -8,12 +8,12 @@
 namespace lidar_viewer::tests::units
 {
 
-using lidar_viewer::geometry::types::Point;
-using lidar_viewer::geometry::types::Point3D;
-using lidar_viewer::geometry::types::toPoint;
-using lidar_viewer::geometry::types::toVector;
-using lidar_viewer::geometry::types::Vector3D;
-using lidar_viewer::geometry::types::VectorOf;
+using lidar_viewer::linalg::Point;
+using lidar_viewer::linalg::Point3D;
+using lidar_viewer::linalg::toPoint;
+using lidar_viewer::linalg::toVector;
+using lidar_viewer::linalg::Vector3D;
+using lidar_viewer::linalg::VectorOf;
 
 TEST(VectorTest, ToVectorKeepsTheCoordinates)
 {

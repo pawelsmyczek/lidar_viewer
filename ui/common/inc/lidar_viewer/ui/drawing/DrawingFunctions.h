@@ -1,6 +1,8 @@
 #ifndef LIDAR_VIEWER_DRAWINGFUNCTIONS_H
 #define LIDAR_VIEWER_DRAWINGFUNCTIONS_H
 
+#include "lidar_viewer/linalg/Point.h"
+
 #include <array>
 #include <functional>
 #include <string>
@@ -10,10 +12,6 @@ namespace lidar_viewer::geometry::types
 
 template <typename PointT>
 struct Box;
-template<typename CoordType, size_t Dimension>
-struct Point;
-template<typename CoordType>
-using  Point3D = Point<CoordType, 3>;
 
 }
 
@@ -21,11 +19,11 @@ namespace lidar_viewer::ui::drawing
 {
 
 template <typename ColorProvider>
-using DrawCube = std::function<void(const geometry::types::Box<geometry::types::Point3D<float>>&,
+using DrawCube = std::function<void(const geometry::types::Box<linalg::Point3D<float>>&,
                                                                     const ColorProvider&)>;
 
 template <typename ColorProvider>
-using DrawPoint = std::function<void(const geometry::types::Point3D<float>&,
+using DrawPoint = std::function<void(const linalg::Point3D<float>&,
                                      const ColorProvider&)>;
 
 template <typename ColorProvider>

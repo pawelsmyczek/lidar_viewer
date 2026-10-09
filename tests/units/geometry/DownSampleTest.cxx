@@ -1,7 +1,7 @@
 #include "lidar_viewer/geometry/functions/DownSample.h"
 
 #include "lidar_viewer/geometry/types/PointCloud.h"
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 
 #include <gtest/gtest.h>
 
@@ -10,7 +10,7 @@ namespace lidar_viewer::tests::units
 {
 
 using PointCloud3Dfloat = lidar_viewer::geometry::types::PointCloud3D<float>;
-using Point3Dfloat = lidar_viewer::geometry::types::Point3D<float>;
+using Point3Dfloat = lidar_viewer::linalg::Point3D<float>;
 
 using lidar_viewer::geometry::functions::downSample;
 

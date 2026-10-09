@@ -9,7 +9,7 @@
 #include <cstddef>
 #include <numeric>
 
-namespace lidar_viewer::geometry::types
+namespace lidar_viewer::linalg
 {
 
 /// Zero initialised matrix with M rows and N columns known at compile time.
@@ -116,6 +116,27 @@ struct Static2DMatrix
         return result;
     }
 
+    /// Determinant, by the explicit cofactor (Laplace) formulas. Available only for square matrices
+    /// of size 1x1, 2x2 and 3x3; any other matrix does not compile. The matrix is not modified.
+    [[nodiscard]] T determinant() const requires (M == N && M >= 1 && M <= 3)
+    {
+        const auto& m = *this;   // m(col, row)
+        if constexpr (M == 1)
+        {
+            return m(0, 0);
+        }
+        else if constexpr (M == 2)
+        {
+            return m(0, 0) * m(1, 1) - m(1, 0) * m(0, 1);
+        }
+        else
+        {
+            return m(0, 0) * (m(1, 1) * m(2, 2) - m(2, 1) * m(1, 2))
+                   - m(1, 0) * (m(0, 1) * m(2, 2) - m(2, 1) * m(0, 2))
+                   + m(2, 0) * (m(0, 1) * m(1, 2) - m(1, 1) * m(0, 2));
+        }
+    }
+
     /// Transpose: rows become columns, (M x N) gives (N x M). The matrix is not modified.
     /// @return new matrix with `result(y, x) == (*this)(x, y)`
     Static2DMatrix<T, N, M> transpose() const
@@ -156,6 +177,6 @@ Static2DMatrix<T, M, N> outer(const Vector<T, M>& a, const Vector<T, N>& b)
     return result;
 }
 
-} // namespace lidar_viewer::geometry::types
+} // namespace lidar_viewer::linalg
 
 #endif //LIDAR_VIEWER_STATIC2DMATRIX_H

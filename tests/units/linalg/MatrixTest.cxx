@@ -1,6 +1,6 @@
-#include "lidar_viewer/geometry/types/DynamicMatrix.h"
-#include "lidar_viewer/geometry/types/Static2DMatrix.h"
-#include "lidar_viewer/geometry/types/Vector.h"
+#include "lidar_viewer/linalg/DynamicMatrix.h"
+#include "lidar_viewer/linalg/Static2DMatrix.h"
+#include "lidar_viewer/linalg/Vector.h"
 
 #include <gtest/gtest.h>
 
@@ -11,13 +11,17 @@
 namespace lidar_viewer::tests::units
 {
 
-using lidar_viewer::geometry::types::DynamicMatrix;
-using lidar_viewer::geometry::types::outer;
-using lidar_viewer::geometry::types::Static2DMatrix;
-using lidar_viewer::geometry::types::Vector;
+using lidar_viewer::linalg::DynamicMatrix;
+using lidar_viewer::linalg::outer;
+using lidar_viewer::linalg::Static2DMatrix;
+using lidar_viewer::linalg::Vector;
 
 namespace
 {
+
+/// true when `MatrixT::determinant()` compiles
+template <typename MatrixT>
+constexpr bool hasDeterminant = requires(MatrixT matrix) { matrix.determinant(); };
 
 /// true when `MatrixT::fromRows(vectors...)` compiles
 template <typename MatrixT, typename... Vectors>
@@ -693,6 +697,164 @@ TEST(Static2DMatrixTest, OuterProductWorksForFloat)
     EXPECT_FLOAT_EQ(m(1, 0), 4.0f);
     EXPECT_FLOAT_EQ(m(0, 1), 6.0f);
     EXPECT_FLOAT_EQ(m(1, 1), 8.0f);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfOneByOneIsTheElement)
+{
+    Static2DMatrix<double, 1, 1> a;
+    a(0, 0) = -3.5;
+
+    EXPECT_NEAR(a.determinant(), -3.5, 1e-12);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfTwoByTwo)
+{
+    Static2DMatrix<double, 2, 2> a;
+    fill(a, 2, 2, {1, 2,
+                   3, 4});
+
+    EXPECT_NEAR(a.determinant(), -2.0, 1e-12);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfThreeByThree)
+{
+    Static2DMatrix<double, 3, 3> a;
+    fill(a, 3, 3, {2, -3, 1,
+                   2,  0, -1,
+                   1,  4, 5});
+
+    EXPECT_NEAR(a.determinant(), 49.0, 1e-9);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfIdentityIsOne)
+{
+    EXPECT_NEAR((Static2DMatrix<double, 1, 1>::identity().determinant()), 1.0, 1e-12);
+    EXPECT_NEAR((Static2DMatrix<double, 2, 2>::identity().determinant()), 1.0, 1e-12);
+    EXPECT_NEAR((Static2DMatrix<double, 3, 3>::identity().determinant()), 1.0, 1e-12);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfDiagonalAndTriangularMatricesIsTheProductOfTheDiagonal)
+{
+    Static2DMatrix<double, 3, 3> diagonal;
+    Static2DMatrix<double, 3, 3> triangular;
+    fill(diagonal, 3, 3, {2, 0, 0,
+                          0, 3, 0,
+                          0, 0, 4});
+    fill(triangular, 3, 3, {2, 7, -1,
+                            0, 3, 5,
+                            0, 0, 4});
+
+    EXPECT_NEAR(diagonal.determinant(), 24.0, 1e-12);
+    EXPECT_NEAR(triangular.determinant(), 24.0, 1e-12);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfPermutationMatrixIsMinusOneForOneSwap)
+{
+    Static2DMatrix<double, 3, 3> a;
+    fill(a, 3, 3, {0, 1, 0,
+                   1, 0, 0,
+                   0, 0, 1});
+
+    EXPECT_NEAR(a.determinant(), -1.0, 1e-12);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfSingularMatrixIsZero)
+{
+    Static2DMatrix<double, 3, 3> dependentRows;
+    Static2DMatrix<double, 3, 3> zeroRow;
+    fill(dependentRows, 3, 3, {1, 2, 3,
+                               4, 5, 6,
+                               7, 8, 9});
+    fill(zeroRow, 3, 3, {1, 2, 3,
+                         0, 0, 0,
+                         7, 8, 9});
+
+    EXPECT_NEAR(dependentRows.determinant(), 0.0, 1e-9);
+    EXPECT_DOUBLE_EQ(zeroRow.determinant(), 0.0);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfTransposeIsTheSame)
+{
+    Static2DMatrix<double, 3, 3> a;
+    fill(a, 3, 3, {2, -3, 1,
+                   2,  0, -1,
+                   1,  4, 5});
+
+    EXPECT_NEAR(a.transpose().determinant(), a.determinant(), 1e-9);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfProductIsProductOfDeterminants)
+{
+    Static2DMatrix<double, 3, 3> a;
+    Static2DMatrix<double, 3, 3> b;
+    fill(a, 3, 3, {2, -3, 1,
+                   2,  0, -1,
+                   1,  4, 5});
+    fill(b, 3, 3, {1, 2, 0,
+                   0, 1, 3,
+                   4, 0, 1});
+
+    EXPECT_NEAR((a * b).determinant(), a.determinant() * b.determinant(), 1e-8);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfScaledMatrixScalesByThePowerOfTheSize)
+{
+    Static2DMatrix<double, 3, 3> a;
+    Static2DMatrix<double, 3, 3> doubled;
+    fill(a, 3, 3, {2, -3, 1,
+                   2,  0, -1,
+                   1,  4, 5});
+    fill(doubled, 3, 3, {4, -6, 2,
+                         4,  0, -2,
+                         2,  8, 10});
+
+    EXPECT_NEAR(doubled.determinant(), 8 * a.determinant(), 1e-8);
+}
+
+TEST(Static2DMatrixTest, DeterminantOfARotationIsOne)
+{
+    Static2DMatrix<double, 3, 3> quarterTurnAroundZ;
+    fill(quarterTurnAroundZ, 3, 3, {0, -1, 0,
+                                    1,  0, 0,
+                                    0,  0, 1});
+
+    EXPECT_NEAR(quarterTurnAroundZ.determinant(), 1.0, 1e-12);
+}
+
+TEST(Static2DMatrixTest, DeterminantDoesNotModifyTheMatrix)
+{
+    Static2DMatrix<double, 3, 3> a;
+    fill(a, 3, 3, {0, 2, 1,
+                   1, 0, 4,
+                   3, 5, 0});
+
+    const auto determinant = a.determinant();
+    (void) determinant;
+
+    expectEqual(a, 3, 3, {0, 2, 1,
+                          1, 0, 4,
+                          3, 5, 0});
+}
+
+TEST(Static2DMatrixTest, DeterminantWorksForFloat)
+{
+    Static2DMatrix<float, 2, 2> a;
+    a(0, 0) = 1.0f; a(1, 0) = 2.0f;
+    a(0, 1) = 3.0f; a(1, 1) = 4.0f;
+
+    EXPECT_NEAR(a.determinant(), -2.0f, 1e-5f);
+}
+
+TEST(Static2DMatrixTest, DeterminantExistsOnlyForSquareMatricesUpToThreeByThree)
+{
+    static_assert(hasDeterminant<Static2DMatrix<double, 1, 1>>);
+    static_assert(hasDeterminant<Static2DMatrix<double, 2, 2>>);
+    static_assert(hasDeterminant<Static2DMatrix<double, 3, 3>>);
+
+    static_assert(!hasDeterminant<Static2DMatrix<double, 4, 4>>);   // too large
+    static_assert(!hasDeterminant<Static2DMatrix<double, 2, 3>>);   // not square
+    static_assert(!hasDeterminant<Static2DMatrix<double, 3, 2>>);   // not square
+    SUCCEED();
 }
 
 // ---------------------------------------------------------------- DynamicMatrix

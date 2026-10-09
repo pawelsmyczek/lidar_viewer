@@ -1,7 +1,7 @@
 #ifndef LIDAR_VIEWER_DOWNSAMPLE_H
 #define LIDAR_VIEWER_DOWNSAMPLE_H
 
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 #include "lidar_viewer/geometry/types/PointCloud.h"
 
 #include <algorithm>
@@ -24,17 +24,17 @@ types::PointCloud3D<CoordType> downSample(const types::PointCloud3D<CoordType>& 
         return {};
     }
     const auto [xMin, xMax] = std::minmax_element(pointCloud.begin(),pointCloud.end(),
-      [](const types::Point3D<CoordType>& point1, const types::Point3D<CoordType>& point2)
+      [](const linalg::Point3D<CoordType>& point1, const linalg::Point3D<CoordType>& point2)
         {
             return point1[0] < point2[0];
         });
     const auto [yMin, yMax] = std::minmax_element(pointCloud.begin(),pointCloud.end(),
-      [](const types::Point3D<CoordType>& point1, const types::Point3D<CoordType>& point2)
+      [](const linalg::Point3D<CoordType>& point1, const linalg::Point3D<CoordType>& point2)
         {
             return point1[1] < point2[1];
         });
     const auto [zMin, zMax] = std::minmax_element(pointCloud.begin(),pointCloud.end(),
-      [](const types::Point3D<CoordType> & point1, const types::Point3D<CoordType>& point2)
+      [](const linalg::Point3D<CoordType> & point1, const linalg::Point3D<CoordType>& point2)
         {
             return point1[2] < point2[2];
         });

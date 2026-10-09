@@ -19,7 +19,7 @@ namespace lidar_viewer::tests::units
 {
 
 using lidar_viewer::geometry::functions::transformPointCloud;
-using lidar_viewer::geometry::types::Point3D;
+using lidar_viewer::linalg::Point3D;
 using lidar_viewer::geometry::types::PointCloud3D;
 using lidar_viewer::geometry::types::Transform3D;
 

@@ -4,7 +4,7 @@
 #include <array>
 #include <utility>
 
-namespace lidar_viewer::geometry::types
+namespace lidar_viewer::linalg
 {
 
 /// Fixed-size point with `Dimension` coordinates of type `CoordType`.
@@ -106,6 +106,31 @@ struct Point
         return *this;
     }
 
+    /// multiplies every coordinate by `scalar` in place
+    constexpr Point<CoordType, Dimension>& operator *= (const CoordType& scalar)
+    {
+        [this, &scalar]<size_t... Is>(std::index_sequence<Is...>)
+        {
+            ((x[Is] *= scalar), ...);
+        }(std::make_index_sequence<Dimension>{});
+        return *this;
+    }
+
+    /// every coordinate multiplied by `scalar`, returns a new point
+    constexpr Point<CoordType, Dimension> operator * (const CoordType& scalar) const
+    {
+        Point<CoordType, Dimension> tmp{*this};
+        tmp *= scalar;
+        return tmp;
+    }
+
+    /// `scalar * point`, same as `point * scalar`
+    friend constexpr Point<CoordType, Dimension> operator * (const CoordType& scalar,
+                                                             const Point<CoordType, Dimension>& point)
+    {
+        return point * scalar;
+    }
+
     /// divides every coordinate by `rhs` **in place** and returns a reference to this point,
     /// so, despite the operator, the receiver is modified (`rhs` must not be zero)
     constexpr Point<CoordType, Dimension>& operator / (size_t rhs)
@@ -139,6 +164,6 @@ using Point3D = Point<CoordType, 3>;
 template <typename CoordType>
 using Point2D = Point<CoordType, 2>;
 
-} // namespace lidar_viewer::geometry::types
+} // namespace lidar_viewer::linalg
 
 #endif //LIDAR_VIEWER_POINT_H

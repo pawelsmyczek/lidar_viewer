@@ -1,6 +1,6 @@
 #include "lidar_viewer/geometry/functions/Utilities.h"
 #include "lidar_viewer/geometry/types/Box.h"
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 #include "lidar_viewer/geometry/types/PointCloud.h"
 
 #include <gtest/gtest.h>
@@ -9,8 +9,8 @@ namespace
 {
 
 // Utility function to compare two points (within a small tolerance)
-bool pointsEqual(const lidar_viewer::geometry::types::Point3D<float>& p1,
-                 const lidar_viewer::geometry::types::Point3D<float>& p2, float tolerance = 0.001f)
+bool pointsEqual(const lidar_viewer::linalg::Point3D<float>& p1,
+                 const lidar_viewer::linalg::Point3D<float>& p2, float tolerance = 0.001f)
 {
     return std::abs(p1[0] - p2[0]) < tolerance
     && std::abs(p1[1] - p2[1]) < tolerance
@@ -23,8 +23,8 @@ namespace lidar_viewer::tests::units
 {
 
 using lidar_viewer::geometry::types::Box;
-using lidar_viewer::geometry::types::Point;
-using lidar_viewer::geometry::types::Point3D;
+using lidar_viewer::linalg::Point;
+using lidar_viewer::linalg::Point3D;
 using lidar_viewer::geometry::types::PointCloud3D;
 using lidar_viewer::geometry::functions::valueToRGBByte;
 using lidar_viewer::geometry::functions::mapValue;

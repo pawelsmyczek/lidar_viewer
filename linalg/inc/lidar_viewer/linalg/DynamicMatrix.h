@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-namespace lidar_viewer::geometry::types
+namespace lidar_viewer::linalg
 {
 
 /// Zero initialised matrix with dimensions chosen at run time.
@@ -96,6 +96,6 @@ private:
     size_t m, n;
 };
 
-} // namespace lidar_viewer::geometry::types
+} // namespace lidar_viewer::linalg
 
 #endif //LIDAR_VIEWER_DYNAMICMATRIX_H

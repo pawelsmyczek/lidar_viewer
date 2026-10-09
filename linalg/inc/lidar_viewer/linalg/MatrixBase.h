@@ -8,7 +8,7 @@
 #include <span>
 #include <stdexcept>
 
-namespace lidar_viewer::geometry::types
+namespace lidar_viewer::linalg
 {
 
 // schoolbook matrix implementation, there is room for improvements
@@ -243,6 +243,6 @@ void identity(Out& out)
 
 } // namespace detail
 
-} // namespace lidar_viewer::geometry::types
+} // namespace lidar_viewer::linalg
 
 #endif //LIDAR_VIEWER_MATRIXBASE_H

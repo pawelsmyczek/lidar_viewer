@@ -1,5 +1,5 @@
-#include "lidar_viewer/geometry/types/Point.h"
-#include "lidar_viewer/geometry/types/Static2DMatrix.h"
+#include "lidar_viewer/linalg/Point.h"
+#include "lidar_viewer/linalg/Static2DMatrix.h"
 #include "lidar_viewer/geometry/types/Transform3D.h"
 
 #include <gtest/gtest.h>
@@ -27,8 +27,8 @@
 namespace lidar_viewer::tests::units
 {
 
-using lidar_viewer::geometry::types::Point3D;
-using lidar_viewer::geometry::types::Static2DMatrix;
+using lidar_viewer::linalg::Point3D;
+using lidar_viewer::linalg::Static2DMatrix;
 using lidar_viewer::geometry::types::Transform3D;
 
 namespace

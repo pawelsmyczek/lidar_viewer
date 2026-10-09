@@ -1,6 +1,6 @@
 #include "lidar_viewer/geometry/functions/GetDepthImageToPointCloudProcessor.h"
 #include "lidar_viewer/geometry/types/Box.h"
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 #include "lidar_viewer/geometry/types/PointCloud.h"
 
 #include <gtest/gtest.h>

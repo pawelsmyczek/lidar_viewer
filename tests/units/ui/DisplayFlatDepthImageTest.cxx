@@ -27,9 +27,9 @@ struct MockDrawPoint
 {
     MockDrawPoint() = default;
 
-    MOCK_METHOD(void, operatorCall, (const geometry::types::Point3D<float>&, (const std::array<uint8_t, 3>&)), (const));
+    MOCK_METHOD(void, operatorCall, (const linalg::Point3D<float>&, (const std::array<uint8_t, 3>&)), (const));
 
-    void operator()(const geometry::types::Point3D<float>& point, const std::array<uint8_t, 3>& color) const
+    void operator()(const linalg::Point3D<float>& point, const std::array<uint8_t, 3>& color) const
     {
         operatorCall(point, color);
     }

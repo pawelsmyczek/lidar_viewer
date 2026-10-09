@@ -40,14 +40,14 @@ tVal mapValue(tVal aFirst, tVal bFirst, tVal upperNormScalar, tVal inVal) noexce
 /// @param rotationValueX elevation angle in radians (rotation around the horizontal axis)
 /// @param rotationValueY azimuth angle in radians (rotation around the vertical axis)
 template <typename T>
-geometry::types::Point3D<T>
+linalg::Point3D<T>
 sphericalToEuclidean(const T zDepth, const T rotationValueX, const T rotationValueY)
 {
     const auto cosY = std::cos(rotationValueY);
     const auto sinY = std::sin(rotationValueY);
     const auto cosX = std::cos(rotationValueX);
     const auto sinX = std::sin(rotationValueX);
-    return geometry::types::Point3D<T>{
+    return linalg::Point3D<T>{
             {zDepth * cosX * sinY, zDepth * sinX, zDepth * cosX * cosY}};
 }
 

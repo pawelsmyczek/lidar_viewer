@@ -1,7 +1,7 @@
 #include "lidar_viewer/ui/display/DisplayPointCloud.h"
 
 #include "lidar_viewer/dev/CygLidarD1.h"
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 #include "lidar_viewer/geometry/types/DepthFrameAttributes.h"
 #include "lidar_viewer/geometry/types/ScreenRanges.h"
 #include "lidar_viewer/geometry/types/PointCloud.h"

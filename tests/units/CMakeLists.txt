@@ -16,16 +16,16 @@ add_executable(${NAME}
         geometry/BoxTest.cxx
         geometry/DownSampleTest.cxx
         geometry/GetDepthImageToPointCloudProcessorTest.cxx
-        geometry/MatrixTest.cxx
         geometry/OctreeTest.cxx
         geometry/OctreeFromPointCloudTest.cxx
         geometry/OctreeIteratorTest.cxx
-        geometry/PointTest.cxx
         geometry/UtilitiesTest.cxx
-        geometry/VectorTest.cxx
         geometry/ScreenRangesTest.cxx
         geometry/Transform3DTest.cxx
         geometry/TransformPointCloudTest.cxx
+        linalg/MatrixTest.cxx
+        linalg/PointTest.cxx
+        linalg/VectorTest.cxx
         ui/ViewerTest.cxx
         ui/DisplayManagerTest.cxx
         ui/DisplayFlatDepthImageTest.cxx)
@@ -36,7 +36,8 @@ target_link_libraries(${NAME}
         GTest::gmock
         lidar_viewer_device
         lidar_viewer_ui
-        lidar_viewer_geometry)
+        lidar_viewer_geometry
+        lidar_viewer_linalg)
 
 enable_testing()
 

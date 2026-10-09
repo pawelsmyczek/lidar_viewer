@@ -48,6 +48,11 @@ struct OctreeNode
         return children[idx];
     }
 
+    const OctreeNode* operator [] (size_t idx) const
+    {
+        return children[idx];
+    }
+
     /// reference to the child pointer number `idx` (0-7), allows attaching a child
     OctreeNode*& at(size_t idx)
     {
@@ -55,13 +60,13 @@ struct OctreeNode
     }
 
     /// true if the node has at least one child
-    bool isDivided()
+    bool isDivided() const
     {
         return std::any_of(children.begin(), children.end(), [](auto & child) { return child != nullptr; } );
     }
 
     /// true if child number `id` (0-7) exists
-    bool hasChild(const size_t id)
+    bool hasChild(const size_t id) const
     {
         return children[id] != nullptr;
     }
@@ -155,6 +160,7 @@ struct Octree
 
     /// root node, owned by the octree
     NodeType* getRootNode() { return root; }
+    const NodeType* getRootNode() const { return root; }
     size_t getDepth() { return depth; }
 
     /// depth first iteration over the nodes, starting at the root

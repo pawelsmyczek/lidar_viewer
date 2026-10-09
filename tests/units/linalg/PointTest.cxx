@@ -1,4 +1,4 @@
-#include "lidar_viewer/geometry/types/Point.h"
+#include "lidar_viewer/linalg/Point.h"
 
 #include <gtest/gtest.h>
 
@@ -7,7 +7,7 @@
 namespace lidar_viewer::tests::units
 {
 
-using lidar_viewer::geometry::types::Point;
+using lidar_viewer::linalg::Point;
 
 TEST(PointTest, ConstructorInitialization)
 {
@@ -316,6 +316,114 @@ TEST(PointTest, DivisionStillDividesEveryCoordinateInPlace)
     EXPECT_DOUBLE_EQ(p[0], 1.0);
     EXPECT_DOUBLE_EQ(p[1], 2.0);
     EXPECT_DOUBLE_EQ(p[2], 3.0);
+}
+
+TEST(PointTest, MultiplyingByAScalarScalesEveryCoordinate)
+{
+    const Point<double, 3> p({1.0, -2.0, 3.0});
+
+    const auto scaled = p * 2.5;
+
+    EXPECT_DOUBLE_EQ(scaled[0], 2.5);
+    EXPECT_DOUBLE_EQ(scaled[1], -5.0);
+    EXPECT_DOUBLE_EQ(scaled[2], 7.5);
+}
+
+TEST(PointTest, MultiplyingByAScalarDoesNotModifyThePoint)
+{
+    const Point<int, 3> p({1, 2, 3});
+
+    const auto scaled = p * 10;
+    (void) scaled;
+
+    EXPECT_EQ(p[0], 1);
+    EXPECT_EQ(p[1], 2);
+    EXPECT_EQ(p[2], 3);
+}
+
+TEST(PointTest, MultiplyingByZeroAndMinusOne)
+{
+    const Point<int, 3> p({1, -2, 3});
+
+    const auto zero = p * 0;
+    const auto negated = p * -1;
+
+    EXPECT_EQ(zero[0], 0);
+    EXPECT_EQ(zero[1], 0);
+    EXPECT_EQ(zero[2], 0);
+    EXPECT_EQ(negated[0], -1);
+    EXPECT_EQ(negated[1], 2);
+    EXPECT_EQ(negated[2], -3);
+}
+
+TEST(PointTest, ScalarOnTheLeftGivesTheSameResult)
+{
+    const Point<double, 3> p({1.0, -2.0, 3.0});
+
+    const auto left = 2.0 * p;
+    const auto right = p * 2.0;
+
+    for (size_t i = 0; i < 3; ++i)
+    {
+        EXPECT_DOUBLE_EQ(left[i], right[i]) << "coordinate " << i;
+    }
+}
+
+TEST(PointTest, MultiplyAssignScalesInPlace)
+{
+    Point<float, 2> p({1.5f, -2.0f});
+
+    auto& result = (p *= 2.0f);
+
+    EXPECT_EQ(&result, &p);
+    EXPECT_FLOAT_EQ(p[0], 3.0f);
+    EXPECT_FLOAT_EQ(p[1], -4.0f);
+}
+
+TEST(PointTest, ScalarOfAnotherArithmeticTypeIsConverted)
+{
+    const Point<float, 2> p({1.5f, 2.0f});
+
+    const auto scaled = p * 2;   // int scalar for a float point
+
+    static_assert(std::is_same_v<std::remove_const_t<decltype(scaled)>, Point<float, 2>>);
+    EXPECT_FLOAT_EQ(scaled[0], 3.0f);
+    EXPECT_FLOAT_EQ(scaled[1], 4.0f);
+}
+
+TEST(PointTest, ScalarMultiplicationWorksAtCompileTime)
+{
+    constexpr Point<int, 3> p{{1, 2, 3}};
+    constexpr auto right = p * 3;
+    constexpr auto left = 3 * p;
+    static_assert(right[0] == 3 && right[1] == 6 && right[2] == 9);
+    static_assert(left[0] == 3 && left[1] == 6 && left[2] == 9);
+    SUCCEED();
+}
+
+TEST(PointTest, ScalarMultiplicationWorksForOtherDimensions)
+{
+    const auto one = Point<double, 1>({4.0}) * 0.5;
+    EXPECT_DOUBLE_EQ(one[0], 2.0);
+
+    const auto five = Point<int, 5>({1, 2, 3, 4, 5}) * 2;
+    for (size_t i = 0; i < 5; ++i)
+    {
+        EXPECT_EQ(five[i], static_cast<int>(2 * (i + 1))) << "coordinate " << i;
+    }
+}
+
+TEST(PointTest, AveragingBySumTimesInverseCount)
+{
+    // the use in a centroid: (p1 + p2 + p3) * (1 / 3)
+    const Point<double, 3> sum = Point<double, 3>({3.0, 6.0, 9.0}) + Point<double, 3>({3.0, 0.0, 3.0})
+                                 + Point<double, 3>({0.0, 0.0, 0.0});
+
+    const auto mean = sum * (1.0 / 3.0);
+
+    EXPECT_NEAR(mean[0], 2.0, 1e-12);
+    EXPECT_NEAR(mean[1], 2.0, 1e-12);
+    EXPECT_NEAR(mean[2], 4.0, 1e-12);
 }
 
 } // namespace lidar_viewer::tests::units

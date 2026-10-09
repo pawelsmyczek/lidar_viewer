@@ -2,7 +2,7 @@
 #define LIDAR_VIEWER_TRANSFORMPOINTCLOUD_H
 #include "lidar_viewer/geometry/types/PointCloud.h"
 #include "lidar_viewer/geometry/types/Transform3D.h"
-#include "lidar_viewer/geometry/types/Vector.h"
+#include "lidar_viewer/linalg/Vector.h"
 
 namespace lidar_viewer::geometry::functions
 {
@@ -23,8 +23,8 @@ types::PointCloud3D<C> transformPointCloud(const types::PointCloud3D<C>& input, 
     result.reserve(result.size());
     for (const auto& point : input)
     {
-        auto transformedVector = transform(toVector<T>(point));
-        result.push_back(toPoint<C>(transformedVector));
+        auto transformedVector = transform(linalg::toVector<T>(point));
+        result.push_back(linalg::toPoint<C>(transformedVector));
     }
     return result;
 }

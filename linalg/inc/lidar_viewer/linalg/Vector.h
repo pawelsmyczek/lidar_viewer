@@ -6,7 +6,7 @@
 #include <concepts>
 #include <cstddef>
 
-namespace lidar_viewer::geometry::types
+namespace lidar_viewer::linalg
 {
 
 /// with a Point class we can easily create a vector of a static size
@@ -48,6 +48,6 @@ constexpr Point3D<C> toPoint(const Vector3D<T>& v)
     return Point3D<C>{v};
 }
 
-} // namespace lidar_viewer::geometry::types
+} // namespace lidar_viewer::linalg
 
 #endif //LIDAR_VIEWER_VECTOR_H
